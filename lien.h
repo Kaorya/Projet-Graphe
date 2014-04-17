@@ -18,5 +18,6 @@ public :
    	const Noeud getNoeudSource() const;
    	const Noeud getNoeudCible() const; 
 };
+//test modification pour git
 
 #endif

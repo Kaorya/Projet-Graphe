@@ -1,7 +1,7 @@
 #include "zoneDessin.h"
 
 
-ZoneDessin::ZoneDessin(QWidget *parent)
+ZoneDessin::ZoneDessin(QWidget *)
 {
 	image = NULL;
 	imageLabel = new QLabel("");
@@ -34,52 +34,44 @@ void ZoneDessin::resizeEvent(QResizeEvent *)
 	{
 		image = new MyQImage(4000,4000,QImage::Format_RGB32,this);
 		image->image->fill(Qt::white);
-		connect(image, SIGNAL(envoieCoord(int, int, QVector<QRect>)), this, SLOT(recuperationCoord(int, int, QVector<QRect>)));
+		connect(image, SIGNAL(envoieCoord(int, int)), this, SLOT(recuperationCoord(int, int)));
+		connect(image, SIGNAL(mouvementSouris(int, int)), this, SLOT(mouvementNoeud(int , int)));
 	}
 	image->dessinerCadre();
 	
 }
 
 
-void ZoneDessin::recuperationCoord(int x , int y, QVector<QRect> tab)
+void ZoneDessin::recuperationCoord(int x , int y)
 {
 
-	qDebug() << "Position (" << x << "," << y << ")";	
-
-	 
-   
-
+	qDebug() << "Position (" << x << "," << y << ")";
+	std::vector<Noeud> listeNoeuds;
+	listeNoeuds = estDansLesNoeuds(x, y);
 
 	if(m_ajoutNoeud)
 	{
 
 		bool estPositionable = true;
+		
 
-		for(int i=0; i < tab.size(); i++){
+		if(!listeNoeuds.empty())
+		{
+		  estPositionable = false;
+      	}
 
-		QPainter painter2(image->image);
-
-      	painter2.drawRect(tabNoeud[i].getPosition().getX() - tab[i].width()/2 - 5,
-      	 tabNoeud[i].getPosition().getY() - tab[i].height()/2,
-      	  tab[i].width() + 10, tab[i].height() + 5);
-
-	      if(x > tabNoeud[i].getPosition().getX() - tab[i].width()/2 - 5 && x < (tabNoeud[i].getPosition().getX() - tab[i].width()/2 - 5 + tab[i].width() + 10)
-	        && y > tabNoeud[i].getPosition().getY() - tab[i].height()/2 && y < (tabNoeud[i].getPosition().getY() - tab[i].height()/2 + tab[i].height() + 5)){
-	          estPositionable = false;
-      }
-      
-    }
-
-		if(estPositionable){
-
+		if(estPositionable)
+		{
+			qDebug() << "Il n'y a aucun noeud où nous avons cliquée";
 		  	QString s = QString::fromStdString(m_dernierNom);
+		  	QPainter painter(image->image);
 		  	qDebug() << "Nom : " << s;
+		  	QFontMetrics fontMetrics(painter.font());
 
-			Noeud n(m_dernierNom, x, y);
-			tabNoeud.push_back(n);
-
-			image->dessineRect(x, y, s);
-			image->dessineTexte(x, y, s);
+			Noeud n(m_dernierNom, x, y, g.getTabNoeud().size(),fontMetrics.width(s),fontMetrics.height());
+			g.m_tabNoeud.push_back(n);
+			painter.end();
+			dessinerGraphe(g);
 
 		}
 		else
@@ -90,19 +82,42 @@ void ZoneDessin::recuperationCoord(int x , int y, QVector<QRect> tab)
 	else if(m_ajoutLien)
 	{
 		nbrClic++;
+		if(listeNoeuds.empty())
+		{
+			nbrClic--;
+		}
+		if(nbrClic == 1 && !listeNoeuds.empty())
+		{
+			noeudS = listeNoeuds[listeNoeuds.size()-1].getIndice();
+			listeNoeuds.clear();
+			qDebug() << "noeudS : " << noeudS;
+		}
 
-	  	if(nbrClic == 2)
+	  	if(nbrClic == 2 && !listeNoeuds.empty())
 	  	{
-	  		Lien l(m_dernierNom,tabNoeud[0],tabNoeud[1]); // a modifier avec identifiant de noeud
+	  		noeudC = listeNoeuds[listeNoeuds.size()-1].getIndice();
+	  		qDebug() << "noeudC : " << noeudC;
+	  		Lien l(m_dernierNom,g.getTabNoeud()[noeudS],g.getTabNoeud()[noeudC]); // a modifier avec identifiant de noeud
+	  		qDebug() << "Lien bien créé avec source : " << noeudS << " et pour cible : " << noeudC;
 		  	QString s = QString::fromStdString(l.getNom());
 		  	qDebug() << "Nom : " << s;
-		  	tabLien.push_back(l);
+		  	g.m_tabLien.push_back(l);
 			
-			image->dessineLigne(l.getNoeudSource().getPosition().getX(), l.getNoeudSource().getPosition().getY(),
-				l.getNoeudCible().getPosition().getX(), l.getNoeudCible().getPosition().getY(), s);
+			dessinerGraphe(g);
 			
 			m_ajoutLien = false;
 			nbrClic = 0;
+
+		}
+		qDebug() << "Nombre clic : " << nbrClic;
+	}
+	else
+	{
+
+		if(!listeNoeuds.empty())
+		{
+			qDebug() << "on est dans le cas où on clique simplement et on est dans un noeud : no " << listeNoeuds[listeNoeuds.size()-1].getIndice();
+			dernierNoeudSelect = listeNoeuds[listeNoeuds.size()-1].getIndice();
 		}
 	}
 	
@@ -111,7 +126,23 @@ void ZoneDessin::recuperationCoord(int x , int y, QVector<QRect> tab)
 	
 }
 
-void ZoneDessin::paintEvent(QPaintEvent * e)
+void ZoneDessin::mouvementNoeud(int x, int y)
+{
+	if(!m_ajoutLien && !m_ajoutLien)
+	{
+		std::vector<Noeud> listeNoeuds;
+		listeNoeuds = estDansLesNoeuds(x, y);
+		if(!listeNoeuds.empty())
+		{
+			g.m_tabNoeud[dernierNoeudSelect].setPosition(x,y);
+			dessinerGraphe(g);
+		}
+		qDebug() << "position du noeud : (" << g.m_tabNoeud[dernierNoeudSelect].getPosition().getX() << "," << g.m_tabNoeud[dernierNoeudSelect].getPosition().getY() << ")";
+	}
+
+}
+
+void ZoneDessin::paintEvent(QPaintEvent *)
 {
 	//imageLabel->setPixmap(QPixmap::fromImage(*(image->image)));
 	//imageLabel->adjustSize();
@@ -125,10 +156,8 @@ void ZoneDessin::paintEvent(QPaintEvent * e)
 void ZoneDessin::nouveauGraphe()
 {
 	image->image->fill(Qt::white);
-	image->dessinerCadre();
-	tabNoeud.clear();
-	tabLien.clear();
-	image->tabRect.clear();
+	g.m_tabNoeud.clear();
+	g.m_tabLien.clear();
 	repaint();
 }
 
@@ -177,4 +206,41 @@ void ZoneDessin::setSuprNoeud(bool b)
 void ZoneDessin::setSuprLien(bool b)
 {
 	m_suprLien = b;
+}
+void ZoneDessin::setNbrClik(int n)
+{
+	nbrClic = n;
+}
+
+std::vector<Noeud> ZoneDessin::estDansLesNoeuds(int x, int y)
+{
+	std::vector<Noeud> listeNoeud;
+
+	for(unsigned int i = 0; i < g.getTabNoeud().size(); i++)
+	{
+	      if(x > g.getTabNoeud()[i].getPosition().getX() - g.getTabNoeud()[i].getWidth()/2 - 5 && x < (g.getTabNoeud()[i].getPosition().getX() - g.getTabNoeud()[i].getWidth()/2 - 5 + g.getTabNoeud()[i].getWidth() + 10)
+	        && y > g.getTabNoeud()[i].getPosition().getY() - g.getTabNoeud()[i].getHeight()/2 && y < (g.getTabNoeud()[i].getPosition().getY() - g.getTabNoeud()[i].getHeight()/2 + g.getTabNoeud()[i].getHeight() + 5))
+	         	listeNoeud.push_back(g.getTabNoeud()[i]);
+    }
+      	return listeNoeud;
+}
+
+void ZoneDessin::dessinerGraphe(Graphe g)
+{
+	image->image->fill(Qt::white);
+  //parcours des tableaux de noeud et de lien et dessin
+	for(unsigned int i=0; i < g.getTabLien().size(); i++)
+	{
+		image->dessineLien(g.getTabLien()[i]);	
+	}
+
+	for(unsigned int i=0; i < g.getTabLien().size(); i++)
+	{
+		image->dessineTexteLien(g.getTabLien()[i]);	
+	}
+
+	for(unsigned int i=0; i < g.getTabNoeud().size(); i++)
+	{
+		image->dessineNoeud(g.getTabNoeud()[i]);	
+	}
 }

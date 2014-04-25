@@ -19,6 +19,7 @@
 #include "noeud.h"
 #include "lien.h"
 
+
 class MyMainWindows : public QWidget
 {
         Q_OBJECT
@@ -30,6 +31,8 @@ public :
         void sauvegarde(QString chemin);
         void sauvegardeImage(QString chemin);
         void chargement(QString chemin);
+
+        
 
 signals:
 		void signalDNouveauGraphe(QDialog* d);

@@ -17,6 +17,7 @@
 #include <QFontMetrics>
 #include "myQImage.h"
 #include <QVector>
+#include "graphe.h"
 
 
 class ZoneDessin : public QWidget
@@ -32,9 +33,11 @@ class ZoneDessin : public QWidget
 		bool	m_ajoutLien;
 		bool	m_suprNoeud;
 		bool	m_suprLien;
+		int noeudS;
+		int noeudC;
+		int dernierNoeudSelect;
 
-		std::vector<Noeud> tabNoeud;
-        std::vector<Lien> tabLien;
+		Graphe g;
         std::string m_dernierNom;
 
 	public :
@@ -42,7 +45,7 @@ class ZoneDessin : public QWidget
         ~ZoneDessin();
 
         QSize sizeHint() const;
-       //void dessinerCadre();
+        void dessinerGraphe(Graphe g);
 
         bool getAjoutNoeud() const;
         bool getAjoutLien() const;
@@ -50,11 +53,14 @@ class ZoneDessin : public QWidget
         bool getSuprLien() const;
         MyQImage* getImage() const;
 
+
         void setAjoutNoeud(bool b);
         void setAjoutLien(bool b);
         void setSuprNoeud(bool b);
         void setSuprLien(bool b);
+        void setNbrClik(int n);
 
+        std::vector<Noeud> estDansLesNoeuds(int x, int y);
 
 
 	signals:
@@ -63,7 +69,8 @@ class ZoneDessin : public QWidget
 	public slots:
 	void nouveauGraphe();
 	void recuperationNomNoeud(std::string s);
-	void recuperationCoord(int x, int y, QVector<QRect> tab);
+	void recuperationCoord(int x, int y);
+	void mouvementNoeud(int x, int y);
 
     protected :
 	 	virtual void resizeEvent(QResizeEvent *e);

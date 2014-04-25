@@ -274,7 +274,12 @@ void MyMainWindows::ajoutNoeud()
 
 void MyMainWindows::ajoutLien()
 {
-  zone->setAjoutLien(true);
+  if(!(zone->getAjoutLien()))
+    zone->setAjoutLien(true);
+  else
+  {
+    zone->setNbrClik(0);
+  }
   envoieNomNoeud(dCreerLien->getNomNoeud().toStdString());
   dCreerLien->setNomNoeud("");
 }
@@ -288,14 +293,18 @@ void MyMainWindows::sauvegarde(QString chemin)
 void MyMainWindows::sauvegardeImage(QString chemin)
 {
   qDebug() << "Sauvegarde de l'image en cours...";
-  qDebug() << "Le chemin n'est pas vide : " << chemin;
   qDebug() << "position x et y max : (" << zone->getImage()->maxX << "," << zone->getImage()->maxY << ")" ;
   qDebug() << "position x et y min : (" << zone->getImage()->minX << "," << zone->getImage()->minY << ")" ;
   zone->getImage()->imageSave = zone->getImage()->image->copy(zone->getImage()->minX - 10, zone->getImage()->minY - 10,zone->getImage()->maxX - zone->getImage()->minX + 10, zone->getImage()->maxY - zone->getImage()->minY + 20);
 
-
+  QString s(".png");
+  if(!chemin.endsWith(s, Qt::CaseSensitive))
+  {
+    qDebug() << "Le fichier ne se finit pas par .png";
+    chemin.insert(chemin.size(),s);
+  }
+  qDebug() << "Le chemin n'est pas vide : " << chemin;
   zone->getImage()->imageSave.save(chemin,"PNG", -1);
-  //chercher le noeud le plus loin, copier l'image redimensionner et la sauvegarder
 
   
 }

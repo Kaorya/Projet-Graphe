@@ -16,8 +16,12 @@
 #include "zoneDessin.h"
 #include "Dialog/dialogSave.h"
 #include "Dialog/dialogCreerNoeud.h"
+#include "Dialog/dialogChangeStyle.h"
+#include "Dialog/dialogStyleLien.h"
 #include "noeud.h"
 #include "lien.h"
+#include <QtXml>
+#include <QKeySequence>
 
 
 class MyMainWindows : public QWidget
@@ -31,6 +35,7 @@ public :
         void sauvegarde(QString chemin);
         void sauvegardeImage(QString chemin);
         void chargement(QString chemin);
+        QString couleurToNom(QColor c);
 
         
 
@@ -41,6 +46,10 @@ signals:
 		void signalDQuitter(QDialog* d);
         void signalDNouveauNoeud(QDialog *d);
         void signalDNouveauLien(QDialog *d);
+        void signalDChange(QDialog *d);
+        void signalDChangeLien(QDialog *d);
+
+        void signalSupression(std::vector<int> tabNoeud, std::vector<int> tabLien);
 
         void envoieNomNoeud(std::string s);
 
@@ -52,6 +61,8 @@ private slots:
        	void appelDQuitter();
         void appelDCreerNoeud();
         void appelDCreerLien();
+        void appelDChange();
+        void appelDChangeLien();
 
         void ajoutNoeud();
         void ajoutLien();
@@ -63,10 +74,30 @@ private slots:
         void appelDSaveBeforeQuitter();
         void appelDOpenImporter();
 
-private : 
-    //Attributs
-        
+        void emissionSignal();
+        void enSelection();
+        void enDeplacement();
 
+        void annulation();
+        void affichageMenu(int x, int y);
+        void affichageMenuLien(int x, int y);
+        void changerStyleNoeud();
+        void changerStyleLien();
+        void changerNomNoeud(int x, int y);
+        void changerNomLien(int x,int y);
+        void changerNom();
+
+        void suppression();
+
+
+private: 
+    //Attributs
+
+        int dernierNoeudSelect;
+        int dernierLienSelect;
+
+        bool m_changeNoeud;
+        bool m_changeLien;
 
        //Déclaration layout
 
@@ -74,6 +105,7 @@ private :
         QHBoxLayout *hboxPrincipale;
         QVBoxLayout *vboxPrincipale;
         QHBoxLayout *hboxBoutons;
+        QVBoxLayout *vboxBoutons;
         QVBoxLayout *vboxBoutons1;
         QVBoxLayout *vboxBoutons2;
 
@@ -90,11 +122,22 @@ private :
         QAction		*aRetablir;
         QAction     *aExporterImage;
 
+        QMenu       *menuClicDroit;
+        QAction     *changerStyle;
+        QMenu       *menuClicDroitLien;
+        QAction     *aChangerStyleLien;
+        QAction     *aAjouterPointCassure;
+
+
         //boutons
         QPushButton *bAjoutNoeud;
         QPushButton *bAjoutLien;
-        QPushButton *bSupprimerNoeud;
-        QPushButton *bSupprimerLien;
+        QPushButton *bSupprimer;
+        QPushButton *bSelection;
+        QPushButton *bDeplacer;
+
+        //QLineEdit pour les nom
+        QLineEdit   *editNom;
 
         //Path
         QString     cheminFichier;
@@ -114,6 +157,9 @@ private :
         QFileDialog    *dSaveBeforeQuitter;
         QFileDialog    *dOpenImporter;
         QFileDialog    *dSaveImage;
+
+        DialogChangeStyle *dChangerStyle;
+        DialogStyleLien *dChangerStyleLien;
 
 };
 

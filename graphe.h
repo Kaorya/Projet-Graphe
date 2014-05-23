@@ -15,8 +15,8 @@ public:
 	Graphe();
 	~Graphe();
 
-	std::vector<Noeud> getTabNoeud() const;
-	std::vector<Lien> getTabLien() const;
+	//std::vector<Noeud> getTabNoeud() const;
+	//std::vector<Lien> getTabLien() const;
 };
 
 #endif

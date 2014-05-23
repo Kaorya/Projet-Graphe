@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <QColor>
+#include <QPainter>
 #include "position.h"
 
 class Noeud
@@ -13,7 +14,7 @@ class Noeud
     QColor m_couleurFond;
     QColor m_couleurPolice;
     QColor m_couleurBordure;
-    int style; // 0 1 mettre une enum plus tard
+    int m_style; // 0 1 mettre une enum plus tard
     int m_indice;
     int m_widthRect;
     int m_heigth;
@@ -32,6 +33,7 @@ public :
         QColor getCouleurBordure() const;
         int getWidth() const;
         int getHeight() const;
+        int getStyle() const;
 
         int getIndice() const;
         void setNom(std::string nom);
@@ -42,6 +44,7 @@ public :
         void setWidth(int w);
         void setHeigth(int h);
         void setIndice(int i);
+        void setStyle(int s);
    
 };
 

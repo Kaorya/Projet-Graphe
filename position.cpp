@@ -2,7 +2,7 @@
 
 Position::Position(int x, int y):m_x(x),m_y(y)
 {
-	std::cout << "Position x y cree" << std::endl;
+	//std::cout << "Position x y cree" << std::endl;
 }
 /*
 Position::Position(const Position &p):m_x(p.m_x),m_y(p.m_y)
@@ -12,7 +12,7 @@ Position::Position(const Position &p):m_x(p.m_x),m_y(p.m_y)
 */
 Position::Position()
 {
-	std::cout << "Position vide cree" << std::endl;
+	//std::cout << "Position vide cree" << std::endl;
 }
 
 int Position::getX() const

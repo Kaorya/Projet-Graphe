@@ -2,19 +2,20 @@
 
 Noeud::Noeud(std::string nom, int indice):m_nom(nom),m_indice(indice)
 {
-	std::cout << "Noeud cree" << std::endl;
+	//std::cout << "Noeud cree" << std::endl;
 }
 
 Noeud::Noeud(std::string nom, int x, int y, int indice, int width, int heigth):m_nom(nom), m_position(x,y), m_indice(indice), m_widthRect(width), m_heigth(heigth)
 {
-	std::cout << "Noeud avec x y cree" << std::endl;
-	m_couleurFond = Qt::black;
+	//std::cout << "Noeud avec x y cree" << std::endl;
+	m_couleurFond = Qt::white;
 	m_couleurPolice = Qt::black;
 	m_couleurBordure = Qt::black;
+	m_style = 0;
 }
 Noeud::Noeud(std::string nom, Position const &p, int indice):m_nom(nom),m_position(p), m_indice(indice)
 {
-	std::cout << "Noeud avec position cree" << std::endl;
+	//std::cout << "Noeud avec position cree" << std::endl;
 }
 std::string Noeud::getNom() const
 {
@@ -47,6 +48,10 @@ int Noeud::getWidth() const
 int Noeud::getHeight() const
 {
 	return m_heigth;
+}
+int Noeud::getStyle() const
+{
+	return m_style;
 }
 void Noeud::setNom(std::string nom)
 {
@@ -81,4 +86,8 @@ void Noeud::setWidth(int w)
 void Noeud::setHeigth(int h)
 {
 	m_heigth = h;
-}       
+}
+void Noeud::setStyle(int s)
+{
+	m_style = s;
+}

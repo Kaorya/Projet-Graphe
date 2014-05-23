@@ -1,5 +1,6 @@
 #include "MyMainWindows.h"
 #include <string>
+#include <QCursor>
 
 MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
 {
@@ -11,13 +12,20 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
       vboxPrincipale = new QVBoxLayout();
       zone = new ZoneDessin();
       hboxBoutons = new QHBoxLayout();
+      vboxBoutons = new QVBoxLayout();
       vboxBoutons1 = new QVBoxLayout();
       vboxBoutons2 = new QVBoxLayout();
+
+      m_changeNoeud = false;
+      m_changeLien = false;
 
 
       menuBar = new QMenuBar(this);
       menuFichier = new QMenu("Fichier",menuBar);
       menuEdition = new QMenu("Edition",menuBar);
+
+      menuClicDroit = new QMenu();
+      menuClicDroitLien = new QMenu();
       //actions
       aNouveauGraphe = new QAction("Nouveau Graphe",menuFichier);
       aImporter = new QAction("Importer",menuFichier);
@@ -27,12 +35,22 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
 
       aAnnuler = new QAction("Annuler",menuEdition);
       aRetablir = new QAction("Retablir",menuEdition);
+
+      changerStyle = new QAction("Changer Style", menuClicDroit);
+      aChangerStyleLien = new QAction("Changer Style", menuClicDroitLien);
+      aAjouterPointCassure = new QAction("Ajouter un point de Cassure", menuClicDroitLien);
         
       //Déclaration boutons
       bAjoutNoeud = new QPushButton("Ajouter noeud");
       bAjoutLien = new QPushButton("Ajouter lien");
-      bSupprimerNoeud = new QPushButton("Supprimer noeud");
-      bSupprimerLien = new QPushButton("Supprimer lien");  
+      bSupprimer = new QPushButton("Supprimer");
+      bSelection = new QPushButton("Selection");
+      bDeplacer = new QPushButton("Se deplacer");  
+
+      //editnom
+
+      editNom = new QLineEdit();
+      editNom->setWindowTitle("Changer Nom");
 
       //Déclaration des dialog
       dNouveauGraphe = new DialogSave("Le fichier en cours va etre efface, voulez-vous le sauvegarder ?");
@@ -49,6 +67,15 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
       dSaveImage = new QFileDialog();
       dSaveBeforeQuitter = new QFileDialog();
       dOpenImporter = new QFileDialog();
+      dChangerStyle = new DialogChangeStyle();
+      dChangerStyleLien = new DialogStyleLien();
+
+      dImporter->setWindowTitle("Sauvegarde");
+      dNouveauGraphe->setWindowTitle("Sauvegarde");
+      dQuitter->setWindowTitle("Sauvegarde");
+      dExporter->setWindowTitle("Sauvegarde");
+      dCreerNoeud->setWindowTitle("Nouveau noeud");
+      dCreerLien->setWindowTitle("Nouveau lien");
   
       //******************************************************//
       //                SLOTS ET SIGNAUX
@@ -103,24 +130,84 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
 
       //Creer Noeud
       connect(bAjoutNoeud, SIGNAL(clicked()), this, SLOT(appelDCreerNoeud()));
+      connect(zone, SIGNAL(nouveauNoeud()), this, SLOT(emissionSignal()));
       connect(this, SIGNAL(signalDNouveauNoeud(QDialog*)), this, SLOT(apparitionDialog(QDialog*)));
       //Creer Noeud : Annuler
       connect(dCreerNoeud->getBAnnuler(), SIGNAL(clicked()), dCreerNoeud, SLOT(close()));
+      connect(dCreerNoeud->getBAnnuler(), SIGNAL(clicked()), this, SLOT(annulation()));
       //Creer Noeud : Creer
       connect(dCreerNoeud->getBCreer(), SIGNAL(clicked()), dCreerNoeud, SLOT(close()));
       connect(dCreerNoeud->getBCreer(), SIGNAL(clicked()), this, SLOT(ajoutNoeud()));
 
       //Creer Lien
       connect(bAjoutLien, SIGNAL(clicked()), this, SLOT(appelDCreerLien()));
+      connect(zone, SIGNAL(nouveauLien()), this, SLOT(emissionSignal()));
       connect(this, SIGNAL(signalDNouveauLien(QDialog*)), this, SLOT(apparitionDialog(QDialog*)));
       //Creer Lien : Annuler
       connect(dCreerLien->getBAnnuler(), SIGNAL(clicked()), dCreerLien, SLOT(close()));
+      connect(dCreerLien->getBAnnuler(), SIGNAL(clicked()), this, SLOT(annulation()));
       //creer Lien : Creer
       connect(dCreerLien->getBCreer(), SIGNAL(clicked()), dCreerLien, SLOT(close()));
       connect(dCreerLien->getBCreer(), SIGNAL(clicked()), this, SLOT(ajoutLien()));
 
       //Envoie du nom du noeud/lien a Zone
       connect(this, SIGNAL(envoieNomNoeud(std::string)), zone, SLOT(recuperationNomNoeud(std::string)));
+
+      //Selection
+      connect(bSelection, SIGNAL(clicked()), this, SLOT(enSelection()));
+
+      //Deplacement
+      connect(bDeplacer, SIGNAL(clicked()), this, SLOT(enDeplacement()));
+
+      //suppression
+      connect(bSupprimer, SIGNAL(clicked()), this, SLOT(suppression()));
+      connect(this, SIGNAL(signalSupression(std::vector<int>, std::vector<int>)), zone, SLOT(suppression(std::vector<int>, std::vector<int>)));
+
+      //connexion au petit menu
+      connect(zone, SIGNAL(afficherMenu(int, int)), this, SLOT(affichageMenu(int, int)));
+      connect(changerStyle, SIGNAL(triggered()), this, SLOT(appelDChange()));
+      connect(this, SIGNAL(signalDChange(QDialog*)), this, SLOT(apparitionDialog(QDialog*)));
+      connect(dChangerStyle->getBValider(), SIGNAL(clicked()), this, SLOT(changerStyleNoeud()));
+      connect(dChangerStyle->getBValider(), SIGNAL(clicked()), dChangerStyle, SLOT(close()));
+      connect(dChangerStyle->getBAnnuler(), SIGNAL(clicked()), dChangerStyle, SLOT(close()));
+
+      //connexion au petit menu pour lien
+      connect(zone, SIGNAL(afficherMenuLien(int, int)), this, SLOT(affichageMenuLien(int, int)));
+      connect(aChangerStyleLien, SIGNAL(triggered()), this, SLOT(appelDChangeLien()));
+      connect(this, SIGNAL(signalDChangeLien(QDialog*)), this, SLOT(apparitionDialog(QDialog*)));
+      connect(dChangerStyleLien->getBValider(), SIGNAL(clicked()), this, SLOT(changerStyleLien()));
+      connect(dChangerStyleLien->getBValider(), SIGNAL(clicked()), dChangerStyleLien, SLOT(close()));
+      connect(dChangerStyleLien->getBAnnuler(), SIGNAL(clicked()), dChangerStyleLien, SLOT(close()));
+
+      //QLineEdit nom/Lien
+      connect(editNom, SIGNAL(returnPressed()), this, SLOT(changerNom()));
+      connect(editNom, SIGNAL(returnPressed()), editNom, SLOT(close()));
+      connect(zone, SIGNAL(changerNomNoeud(int, int)), this, SLOT(changerNomNoeud(int, int)));
+      connect(zone, SIGNAL(changerNomLien(int, int)), this, SLOT(changerNomLien(int, int)));
+      
+      //******************************************************//
+      //                     SHORTCUTS                        //
+      //******************************************************//
+
+      QKeySequence raccourciNoeud("n");
+      bAjoutNoeud->setShortcut(raccourciNoeud);
+      QKeySequence raccourciLien("l");
+      bAjoutLien->setShortcut(raccourciLien);
+      QKeySequence raccourciSelection("s");
+      bSelection->setShortcut(raccourciSelection);
+      QKeySequence raccourciDeplacer("d");
+      bDeplacer->setShortcut(raccourciDeplacer);
+      QKeySequence raccourciSupprimer("Del");
+      bSupprimer->setShortcut(raccourciSupprimer);
+
+      QKeySequence raccourciNouveauGraphe("Ctrl+n");
+      aNouveauGraphe->setShortcut(raccourciNouveauGraphe);
+      QKeySequence raccourciImporter("Ctrl+i");
+      aImporter->setShortcut(raccourciImporter);
+      QKeySequence raccourciExporter("Ctrl+s");
+      aExporter->setShortcut(raccourciExporter);
+      QKeySequence raccourciQuitter("Ctrl+q");
+      aQuitter->setShortcut(raccourciQuitter);
 
       //******************************************************//
       //       Ajout des widget/layout à l'affichage
@@ -138,20 +225,28 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
         menuEdition->addAction(aAnnuler);
         menuEdition->addAction(aRetablir);
 
+        menuClicDroit->addAction(changerStyle);
+
+        menuClicDroitLien->addAction(aChangerStyleLien);
+        menuClicDroitLien->addAction(aAjouterPointCassure);
+
         //Ajout des widgets aux layout
 
         //vboxs des boutons
 
         vboxBoutons1->addWidget(bAjoutNoeud);
-        vboxBoutons1->addWidget(bSupprimerNoeud);
+        vboxBoutons1->addWidget(bSelection);
         vboxBoutons2->addWidget(bAjoutLien);
-        vboxBoutons2->addWidget(bSupprimerLien);
+        vboxBoutons2->addWidget(bDeplacer);
+        
 
         hboxBoutons->addLayout(vboxBoutons1);
         hboxBoutons->addLayout(vboxBoutons2);
-       
+        vboxBoutons->addLayout(hboxBoutons);
+        vboxBoutons->addWidget(bSupprimer);
+
         //vboxPrincipale
-        vboxPrincipale->addLayout(hboxBoutons);
+        vboxPrincipale->addLayout(vboxBoutons);
         vboxPrincipale->addStretch(5);
 
         //hboxPrincipale 
@@ -166,6 +261,47 @@ MyMainWindows::~MyMainWindows()
   delete hboxPrincipale;
   delete vboxPrincipale;
   delete menuBar;
+  delete zone;
+  delete hboxBoutons;
+  delete vboxBoutons;
+  delete vboxBoutons1;
+  delete vboxBoutons2;
+
+  delete menuFichier;
+  delete menuEdition;
+  delete aNouveauGraphe;
+  delete aImporter;
+  delete aExporter;
+  delete aQuitter;
+  delete aAnnuler;
+  delete aRetablir;
+  delete aExporterImage;
+
+  delete menuClicDroit;
+  delete changerStyle;
+  delete menuClicDroitLien;
+  delete aChangerStyleLien;
+  delete aAjouterPointCassure;
+
+  delete bAjoutNoeud;
+  delete bAjoutLien;
+  delete bSupprimer;
+  delete bSelection;
+  delete bDeplacer;
+
+  delete dCreerNoeud;
+  delete dCreerLien;
+
+  delete dSaveBeforeNouveauGraphe;
+  delete dSaveBeforeImporter;
+  delete dSaveExporter;
+  delete dSaveBeforeQuitter;
+  delete dOpenImporter;
+  delete dSaveImage;
+
+  delete dChangerStyle;
+  delete dChangerStyleLien;      
+
 }
 
 //SLOTS de mymainWindows
@@ -182,12 +318,16 @@ void MyMainWindows::apparitionDialog(QDialog* d)
 
 void MyMainWindows::appelDNouveauGraphe()
 {
-  emit signalDNouveauGraphe(dNouveauGraphe);
+  //if(!zone->g.m_tabNoeud.empty())
+    emit signalDNouveauGraphe(dNouveauGraphe);
 }
 
 void MyMainWindows::appelDImporter()
 {
-  emit signalDImporter(dImporter);
+  if(!zone->g.m_tabNoeud.empty())
+    emit signalDImporter(dImporter);
+  else
+    appelDOpenImporter();
 }
 void MyMainWindows::appelDExporter()
 {
@@ -196,32 +336,78 @@ void MyMainWindows::appelDExporter()
 
 void MyMainWindows::appelDQuitter()
 {
-  emit signalDQuitter(dQuitter);
+  if(!zone->g.m_tabNoeud.empty())
+    emit signalDQuitter(dQuitter);
+  else
+    this->close();
+}
+
+void MyMainWindows::appelDChange()
+{
+  emit signalDChange(dChangerStyle);
+}
+
+void MyMainWindows::appelDChangeLien()
+{
+  emit signalDChangeLien(dChangerStyleLien);
 }
 
 void MyMainWindows::appelDCreerNoeud()
 {
-  emit signalDNouveauNoeud(dCreerNoeud);
+  this->setCursor(Qt::CrossCursor);
+  bAjoutNoeud->setDown(true);
+  bAjoutLien->setDown(false);
+  bSelection->setDown(false);
+  bDeplacer->setDown(false);
+  bSupprimer->setDown(false);
+  zone->setAjoutNoeud(true);
+
 }
 void MyMainWindows::appelDCreerLien()
 {
-  emit signalDNouveauLien(dCreerLien);
+  this->setCursor(Qt::CrossCursor);
+  bAjoutNoeud->setDown(false);
+  bAjoutLien->setDown(true);
+  bSelection->setDown(false);
+  bDeplacer->setDown(false);
+  bSupprimer->setDown(false);
+  zone->setAjoutLien(true);
 }
+void MyMainWindows::enSelection()
+{
+  this->setCursor(Qt::ArrowCursor);
+  bAjoutNoeud->setDown(false);
+  bAjoutLien->setDown(false);
+  bSelection->setDown(true);
+  bDeplacer->setDown(false);
+  bSupprimer->setDown(false);
+  zone->setSelection(true);
+}
+void MyMainWindows::enDeplacement()
+{
+  this->setCursor(Qt::OpenHandCursor);
+  bAjoutNoeud->setDown(false);
+  bAjoutLien->setDown(false);
+  bSelection->setDown(false);
+  bDeplacer->setDown(true);
+  bSupprimer->setDown(false);
+  zone->setDeplacer(true);
+}
+
 
 void MyMainWindows::appelDSaveBeforeNouveauGraphe()
 {
-  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeNouveauGraphe, "Enregistrer votre progression", QString(), "Extension (*.pouet)");
+  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeNouveauGraphe, "Enregistrer votre progression", QString(), "Extension (*.xml)");
   if(!cheminFichier.isEmpty())
   {
-    //TODO RECUPERER LE CHEMIN VERS L'INFINI !!
-    qDebug() << "Le chemin n'est pas vide : " << cheminFichier;
+    //qDebug() << "Le chemin n'est pas vide : " << cheminFichier;
     sauvegarde(cheminFichier);
   }
   zone->nouveauGraphe();
 }
 void MyMainWindows::appelDSaveBeforeImporter()
 {
-  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeImporter, "Enregistrer votre progression", QString(), "Extension (*.pouet)");
+  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeImporter, "Enregistrer votre progression", QString(), "Extension (*.xml)");
   if(!cheminFichier.isEmpty())
   {
     sauvegarde(cheminFichier);
@@ -230,7 +416,7 @@ void MyMainWindows::appelDSaveBeforeImporter()
 }
 void MyMainWindows::appelDOpenImporter()
 {
-  cheminFichier = QFileDialog::getOpenFileName(dOpenImporter, "Charger un fichier", QString(), "Extension (*.pouet)");
+  cheminFichier = QFileDialog::getOpenFileName(dOpenImporter, "Charger un fichier", QString(), "Extension (*.xml)");
   if(!cheminFichier.isEmpty())
   {
     chargement(cheminFichier);
@@ -238,7 +424,7 @@ void MyMainWindows::appelDOpenImporter()
 }
 void MyMainWindows::appelDSaveExporter()
 {
-  cheminFichier = QFileDialog::getSaveFileName(dSaveExporter, "Enregistrer votre progression", QString(), "Extension (*.pouet)");
+  cheminFichier = QFileDialog::getSaveFileName(dSaveExporter, "Enregistrer votre progression", QString(), "Extension (*.xml)");
   if(!cheminFichier.isEmpty())
   {
     sauvegarde(cheminFichier);
@@ -257,7 +443,7 @@ void MyMainWindows::appelDSaveImage()
 
 void MyMainWindows::appelDSaveBeforeQuitter()
 {
-  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeQuitter, "Enregistrer votre progression", QString(), "Extension (*.pouet)");
+  cheminFichier = QFileDialog::getSaveFileName(dSaveBeforeQuitter, "Enregistrer votre progression", QString(), "Extension (*.xml)");
   if(!cheminFichier.isEmpty())
   {
     sauvegarde(cheminFichier);
@@ -267,13 +453,14 @@ void MyMainWindows::appelDSaveBeforeQuitter()
 
 void MyMainWindows::ajoutNoeud()
 {
-  zone->setAjoutNoeud(true);
+  bAjoutNoeud->setDown(true);
   envoieNomNoeud(dCreerNoeud->getNomNoeud().toStdString());
   dCreerNoeud->setNomNoeud("");
 }
 
 void MyMainWindows::ajoutLien()
 {
+  bAjoutLien->setDown(true);
   if(!(zone->getAjoutLien()))
     zone->setAjoutLien(true);
   else
@@ -284,34 +471,599 @@ void MyMainWindows::ajoutLien()
   dCreerLien->setNomNoeud("");
 }
 
+void MyMainWindows::emissionSignal()
+{
+  if(zone->getAjoutNoeud())
+    emit signalDNouveauNoeud(dCreerNoeud);
+  else if(zone->getAjoutLien())
+    emit signalDNouveauLien(dCreerLien);
+}
+
+void MyMainWindows::annulation()
+{
+  if(zone->getAjoutNoeud())
+  {
+    zone->setAjoutNoeud(false);
+    bAjoutNoeud->setDown(false);
+    this->setCursor(Qt::ArrowCursor);
+  }
+  if(zone->getAjoutLien())
+  {
+    zone->setAjoutLien(false);
+    bAjoutLien->setDown(false);
+    this->setCursor(Qt::ArrowCursor);
+  }
+}
+void MyMainWindows::suppression()
+{
+  std::vector<int> v;
+  std::vector<int> v2;
+    if(zone->vNoeud.empty() && zone->vLien.empty())
+    {
+    //  qDebug() << "vNoeud et vLien sont vide";
+      if(zone->getDerniereSelection() == 1)
+      { //qDebug() << "derniereSelection : noeud";
+         // qDebug() << "dernierNoeudSelect : " << (zone->getDernierNoeudSelect());
+          v.push_back((zone->getDernierNoeudSelect()));
+      }
+      else if(zone->getDerniereSelection() == 2)
+      { //qDebug() << "derniereSelection : lien";
+        if(zone->getDernierLienSelect())
+          v2.push_back(*(zone->getDernierLienSelect()));
+      }
+    }
+        emit signalSupression(v,v2);
+}
+
+void MyMainWindows::affichageMenu(int x, int y)
+{
+  std::vector<Noeud> listeNoeuds;
+  listeNoeuds = zone->estDansLesNoeuds(x, y);
+  dernierNoeudSelect = listeNoeuds[listeNoeuds.size()-1].getIndice();
+  QPoint p(10 + x + zone->view->x() + zone->x() + this->x() - zone->view->horizontalScrollBar()->value(), 30 + y + zone->view->y() + zone->y() + this->y() - zone->view->verticalScrollBar()->value());
+  menuClicDroit->popup(p, changerStyle);
+  dChangerStyle->setCouleurPolice(couleurToNom(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurPolice()));
+  dChangerStyle->setCouleurFond(couleurToNom(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurFond()));
+  dChangerStyle->setCouleurBordure(couleurToNom(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurBordure()));
+  menuClicDroit->show();
+}
+
+void MyMainWindows::affichageMenuLien(int x, int y)
+{
+  std::vector<Lien> listeLien;
+  listeLien = zone->estDansLesLiens(x,y);
+  dernierLienSelect = listeLien[listeLien.size()-1].getIndice();
+  QPoint p(10 + x + zone->view->x() + zone->x() + this->x() - zone->view->horizontalScrollBar()->value(), 30 + y + zone->view->y() + zone->y() + this->y() - zone->view->verticalScrollBar()->value());
+  menuClicDroitLien->popup(p, aChangerStyleLien);
+  dChangerStyleLien->setCouleurPolice(couleurToNom(zone->g.m_tabLien[dernierLienSelect].getCouleurPoliceLien()));
+  dChangerStyleLien->setCouleurLien(couleurToNom(zone->g.m_tabLien[dernierLienSelect].getCouleurLien()));
+
+  menuClicDroitLien->show();
+}
+
+void MyMainWindows::changerStyleNoeud()
+{
+  zone->g.m_tabNoeud[dernierNoeudSelect].setCouleurPolice(dChangerStyle->getCouleurPolice());
+  zone->g.m_tabNoeud[dernierNoeudSelect].setCouleurFond(dChangerStyle->getCouleurFond());
+  zone->g.m_tabNoeud[dernierNoeudSelect].setCouleurBordure(dChangerStyle->getCouleurBordure());
+
+  zone->tabRect[dernierNoeudSelect]->setPen(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurBordure());
+  zone->tabRect[dernierNoeudSelect]->setBrush(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurFond());
+  zone->tabTxtRect[dernierNoeudSelect]->setDefaultTextColor(zone->g.m_tabNoeud[dernierNoeudSelect].getCouleurPolice());
+  //redessiner seulement le noeud
+}
+
+void MyMainWindows::changerStyleLien()
+{
+  zone->g.m_tabLien[dernierLienSelect].setCouleurPoliceLien(dChangerStyleLien->getCouleurPolice());
+  zone->g.m_tabLien[dernierLienSelect].setCouleurLien(dChangerStyleLien->getCouleurLien());
+
+  zone->tabLine[dernierLienSelect]->setPen(zone->g.m_tabLien[dernierLienSelect].getCouleurLien());
+  zone->tabTxtLine[dernierLienSelect]->setDefaultTextColor(zone->g.m_tabLien[dernierLienSelect].getCouleurPoliceLien());
+  //redessiner seulement le lien;
+}
+
+void MyMainWindows::changerNomNoeud(int x, int y)
+{
+  editNom->move(x + zone->view->x() + zone->x() + this->x() - zone->view->horizontalScrollBar()->value(),y + zone->view->y() + zone->y() + this->y() - zone->view->verticalScrollBar()->value());
+  std::vector<Noeud> listeNoeuds;
+  listeNoeuds = zone->estDansLesNoeuds(x,y);
+  dernierNoeudSelect = listeNoeuds[listeNoeuds.size()-1].getIndice();
+  QString s = QString::fromStdString(zone->g.m_tabNoeud[dernierNoeudSelect].getNom());
+  editNom->setText(s);
+  editNom->show();
+  m_changeNoeud = true;
+}
+
+void MyMainWindows::changerNomLien(int x, int y)
+{
+  editNom->move(x + zone->view->x() + zone->x() + this->x() - zone->view->horizontalScrollBar()->value(),y + zone->view->y() + zone->y() + this->y() - zone->view->verticalScrollBar()->value());
+  std::vector<Lien> listeLien = zone->estDansLesLiens(x,y);
+  dernierLienSelect = listeLien[listeLien.size()-1].getIndice();
+  QString s = QString::fromStdString(zone->g.m_tabLien[dernierLienSelect].getNom());
+  editNom->setText(s);
+  editNom->show();
+  m_changeLien = true;
+}
+
+void MyMainWindows::changerNom()
+{
+  if(m_changeNoeud)
+  {
+    std::string s = editNom->text().toStdString();
+    zone->g.m_tabNoeud[dernierNoeudSelect].setNom(s);
+
+    QFontMetrics fontMetrics(zone->scene->font());
+    zone->g.m_tabNoeud[dernierNoeudSelect].setWidth(fontMetrics.width(editNom->text()) + 10);
+    QRectF rect(0 ,0, zone->g.m_tabNoeud[dernierNoeudSelect].getWidth() - 3, zone->g.m_tabNoeud[dernierNoeudSelect].getHeight() - 3);
+    
+    zone->tabRect[dernierNoeudSelect]->setRect(rect);
+    zone->tabTxtRect[dernierNoeudSelect]->setPlainText(QString::fromStdString(zone->g.m_tabNoeud[dernierNoeudSelect].getNom()));
+    /*
+    QPainter painter(zone->image->image);
+
+
+    painter.end();
+    zone->image->dessineNoeud(zone->g.m_tabNoeud[dernierNoeudSelect]);
+    */
+    m_changeNoeud = false;
+  }
+  else if(m_changeLien)
+  {
+    std::string s = editNom->text().toStdString();
+    /*
+    QPainter painter(zone->image->image);
+    //painter.fillRect(zone->g.m_tabLien[dernierLienSelect].getPosition().getX() - (zone->g.m_tabLien[dernierLienSelect].getWidth())/2, zone->g.m_tabLien[dernierLienSelect].getPosition().getY() - zone->g.m_tabLien[dernierLienSelect].getHeight(), zone->g.m_tabLien[dernierLienSelect].getWidth(), zone->g.m_tabLien[dernierLienSelect].getHeight()+5, Qt::white);
+    painter.setPen(Qt::red);
+    painter.drawRect(zone->g.m_tabLien[dernierLienSelect].getPosition().getX() - (zone->g.m_tabLien[dernierLienSelect].getWidth())/2, zone->g.m_tabLien[dernierLienSelect].getPosition().getY() - zone->g.m_tabLien[dernierLienSelect].getHeight(), zone->g.m_tabLien[dernierLienSelect].getWidth(), zone->g.m_tabLien[dernierLienSelect].getHeight()+5);
+    zone->g.m_tabLien[dernierLienSelect].setNom(s);
+    
+    QFontMetrics fontMetrics(painter.font());
+    zone->g.m_tabLien[dernierLienSelect].setWidth(fontMetrics.width(editNom->text()));
+    painter.end();
+    
+    zone->image->dessineTexteLien(zone->g.m_tabLien[dernierLienSelect],
+  zone->g.m_tabNoeud[zone->g.m_tabLien[dernierLienSelect].getNoeudSource()].getPosition().getX(),
+  zone->g.m_tabNoeud[zone->g.m_tabLien[dernierLienSelect].getNoeudCible()].getPosition().getX(),
+  zone->g.m_tabNoeud[zone->g.m_tabLien[dernierLienSelect].getNoeudSource()].getPosition().getY(),
+  zone->g.m_tabNoeud[zone->g.m_tabLien[dernierLienSelect].getNoeudCible()].getPosition().getY()
+  );
+    
+    zone->dessinerLienVerification(zone->g.m_tabLien[dernierLienSelect]);
+
+    //qDebug() << "le lien aurait du etre redessiner";
+    */
+    m_changeLien = false;
+  }
+}
+
+
+QString MyMainWindows::couleurToNom(QColor c)
+{
+  if(c.name() == "#000000")
+  {
+    QString s("Noir");
+    return s;
+  }
+  else if(c.name() == "#ff0000")
+  {
+    QString s("Rouge");
+    return s;
+  }
+  else if(c.name() == "#00ff00")
+  {
+    QString s("Vert");
+    return s;
+  }
+  else if(c.name() == "#0000ff")
+  {
+    QString s("Bleu");
+    return s;
+  }
+  else if(c.name() == "#ff6699")
+  {
+    QString s("Rose");
+    return s;
+  }
+  else if(c.name() == "#ffcc00")
+  {
+    QString s("Jaune");
+    return s;
+  }
+  else if(c.name() == "#ff6600")
+  {
+    QString s("Orange");
+    return s;
+  }
+  else if(c.name() == "#660099")
+  {
+    QString s("Violet");
+    return s;
+  }
+  else if(c.name() == "#ffffff")
+  {
+    QString s("Blanc");
+    return s;
+  }
+  else
+  {
+    QString s("Noir");
+    return s;
+  }
+}
+
+/************************************************/
+/*                SAUVEGARDE                    */
+/************************************************/
+
+
 void MyMainWindows::sauvegarde(QString chemin)
 {
-  qDebug() << "Sauvegarde en cours...";
-  qDebug() << "Le chemin n'est pas vide : " << chemin;
+  QDomDocument doc;
+  QDomElement graphe;
+  QDomElement noeuds;
+  QDomElement liens;
+  QFile file;
+  QTextStream out;
+
+  graphe = doc.createElement("graphe");
+
+  if(zone->g.m_tabNoeud.size() > 0)
+      noeuds = doc.createElement("noeuds");
+  if(zone->g.m_tabLien.size() > 0)
+      liens = doc.createElement("liens");
+
+  QString s(".xml");
+  if(!chemin.endsWith(s, Qt::CaseSensitive))
+  {
+    qDebug() << "Le fichier ne se finit pas par .xml";
+    chemin.insert(chemin.size(),s);
+  }
+  //qDebug() << "Le chemin n'est pas vide : " << chemin;
+  file.setFileName(chemin);
+  if(!file.open(QIODevice::WriteOnly))
+    return;
+  out.setDevice(&file);
+  //sauvegarde des noeuds et liens
+
+  if(zone->g.m_tabNoeud.size() > 0)
+  {
+
+    for(unsigned int i = 0; i < zone->g.m_tabNoeud.size(); i++)
+    {
+      QDomElement noeud = doc.createElement("noeud");
+      noeuds.appendChild(noeud);
+      noeud.setAttribute("indice",QString::number(zone->g.m_tabNoeud[i].getIndice()));
+      //nom
+      QDomElement nom = doc.createElement("nom");
+      noeud.appendChild(nom);
+
+      QDomText tnom = doc.createTextNode(QString::fromStdString(zone->g.m_tabNoeud[i].getNom()));
+      nom.appendChild(tnom);
+
+      //positionX
+      QDomElement positionX = doc.createElement("positionX");
+      noeud.appendChild(positionX);
+
+      QDomText tposX = doc.createTextNode(QString::number(zone->g.m_tabNoeud[i].getPosition().getX()));
+      positionX.appendChild(tposX);
+
+      //positionY
+      QDomElement positionY = doc.createElement("positionY");
+      noeud.appendChild(positionY);
+
+      QDomText tposY = doc.createTextNode(QString::number(zone->g.m_tabNoeud[i].getPosition().getY()));
+      positionY.appendChild(tposY);
+
+      //largeur
+      QDomElement largeur = doc.createElement("largeur");
+      noeud.appendChild(largeur);
+
+      QDomText tlargeur = doc.createTextNode(QString::number(zone->g.m_tabNoeud[i].getWidth()));
+      largeur.appendChild(tlargeur);
+
+      //hauteur
+      QDomElement hauteur = doc.createElement("hauteur");
+      noeud.appendChild(hauteur);
+
+      QDomText thauteur = doc.createTextNode(QString::number(zone->g.m_tabNoeud[i].getHeight()));
+      hauteur.appendChild(thauteur);
+
+      //positionCouleurFond
+      QDomElement couleurFond = doc.createElement("couleurFond");
+      noeud.appendChild(couleurFond);
+
+      QDomText tcouleurFond = doc.createTextNode(zone->g.m_tabNoeud[i].getCouleurFond().name());
+      couleurFond.appendChild(tcouleurFond);
+
+      //positionCouleurPolice
+      QDomElement couleurPolice = doc.createElement("couleurPolice");
+      noeud.appendChild(couleurPolice);
+
+      QDomText tcouleurPolice = doc.createTextNode(zone->g.m_tabNoeud[i].getCouleurPolice().name());
+      couleurPolice.appendChild(tcouleurPolice);
+
+      //positionCouleurBordure
+      QDomElement couleurBordure = doc.createElement("couleurBordure");
+      noeud.appendChild(couleurBordure);
+
+      QDomText tcouleurBordure = doc.createTextNode(zone->g.m_tabNoeud[i].getCouleurBordure().name());
+      couleurBordure.appendChild(tcouleurBordure);
+
+      //style
+      QDomElement style = doc.createElement("style");
+      noeud.appendChild(style);
+
+      QDomText tstyle = doc.createTextNode(QString::number(zone->g.m_tabNoeud[i].getStyle()));
+      style.appendChild(tstyle);
+
+    }
+    graphe.appendChild(noeuds);
+  }
+
+  if(zone->g.m_tabLien.size() > 0)
+  {
+
+    for(unsigned int i = 0; i < zone->g.m_tabLien.size(); i++)
+    {
+      QDomElement lien = doc.createElement("lien");
+      liens.appendChild(lien);
+      lien.setAttribute("indice",QString::number(zone->g.m_tabLien[i].getIndice()));
+      //nom
+      QDomElement nom = doc.createElement("nom");
+      lien.appendChild(nom);
+
+      QDomText tnom = doc.createTextNode(QString::fromStdString(zone->g.m_tabLien[i].getNom()));
+      nom.appendChild(tnom);
+
+      //noeudSource
+      QDomElement noeudSource = doc.createElement("noeudSource");
+      lien.appendChild(noeudSource);
+
+      QDomText tnoeudSource = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getNoeudSource()));
+      noeudSource.appendChild(tnoeudSource);
+
+      //noeudCible
+      QDomElement noeudCible = doc.createElement("noeudCible");
+      lien.appendChild(noeudCible);
+
+      QDomText tnoeudCible = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getNoeudCible()));
+      noeudCible.appendChild(tnoeudCible);
+
+      //positionX
+      QDomElement positionX = doc.createElement("positionX");
+      lien.appendChild(positionX);
+
+      QDomText tpositionX = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getPosition().getX()));
+      positionX.appendChild(tpositionX);
+
+      //positionY
+      QDomElement positionY = doc.createElement("positionY");
+      lien.appendChild(positionY);
+
+      QDomText tpositionY = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getPosition().getY()));
+      positionY.appendChild(tpositionY);
+
+      //largeur
+      QDomElement largeur = doc.createElement("largeur");
+      lien.appendChild(largeur);
+
+      QDomText tlargeur = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getWidth()));
+      largeur.appendChild(tlargeur);
+
+      //hauteur
+      QDomElement hauteur = doc.createElement("hauteur");
+      lien.appendChild(hauteur);
+
+      QDomText thauteur = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getHeight()));
+      hauteur.appendChild(thauteur);
+
+
+      //couleurLien
+      QDomElement couleurLien = doc.createElement("couleurLien");
+      lien.appendChild(couleurLien);
+
+      QDomText tcouleurLien = doc.createTextNode(zone->g.m_tabLien[i].getCouleurLien().name());
+      couleurLien.appendChild(tcouleurLien);
+
+      //couleurPoliceLien
+      QDomElement couleurPoliceLien = doc.createElement("couleurPoliceLien");
+      lien.appendChild(couleurPoliceLien);
+
+      QDomText tcouleurPoliceLien = doc.createTextNode(zone->g.m_tabLien[i].getCouleurPoliceLien().name());
+      couleurPoliceLien.appendChild(tcouleurPoliceLien);
+
+      //fleche
+      QDomElement fleche = doc.createElement("fleche");
+      lien.appendChild(fleche);
+
+      QDomText tfleche = doc.createTextNode(QString::number(zone->g.m_tabLien[i].getFleche()));
+      fleche.appendChild(tfleche);
+      /*
+      QDomElement pointsCassure = doc.createElement("pointsCassure");
+      lien.appendChild(pointsCassure);
+
+        for(unsigned int j = 0; j < zone->g.m_tabLien[i].m_tabCassure; j++)
+        {
+          QDomElement point = doc.createElement("point");
+          pointsCassure.appendChild(point);
+
+          //positionPointX
+          QDomElement positionPointX = doc.createElement("positionPointX");
+          point.appendChild(positionPointX);
+
+          QDomText tpositionPointX = doc.createTextNode(QString::number(zone->g.m_tabLien[i].m_tabCassure[j].getX()));
+          positionPointX.appendChild(tpositionPointX);
+          
+          //positionPointY
+          QDomElement positionPointY = doc.createElement("positionPointY");
+          point.appendChild(positionPointY);
+
+          QDomText tpositionPointY = doc.createTextNode(QString::number(zone->g.m_tabLien[i].m_tabCassure[j].getY()));
+          positionPointY.appendChild(tpositionPointY);
+
+        }
+      */
+    }
+    graphe.appendChild(liens);
+  }
+  doc.appendChild(graphe);
+
+  //fin sauvegarde
+  QDomNode n = doc.createProcessingInstruction("xml","version=\"1.0\"");
+  doc.insertBefore(n,doc.firstChild());
+
+  doc.save(out,2);
+  file.close();
+
+
 }
 
 void MyMainWindows::sauvegardeImage(QString chemin)
 {
-  qDebug() << "Sauvegarde de l'image en cours...";
-  qDebug() << "position x et y max : (" << zone->getImage()->maxX << "," << zone->getImage()->maxY << ")" ;
-  qDebug() << "position x et y min : (" << zone->getImage()->minX << "," << zone->getImage()->minY << ")" ;
+  QImage image(4000,4000,QImage::Format_RGB32);
+  image.fill(Qt::white);
+
+  QPainter painter(&image);
+  zone->scene->render(&painter);
+
+  QImage imageSave(4000,4000,QImage::Format_RGB32);
+  imageSave.fill(Qt::white);
+
+  imageSave = image.copy(zone->minX - 10, zone->minY - 10,zone->maxX - zone->minX + 10, zone->maxY - zone->minY + 20);
+
+   QString s(".png");
+  if(!chemin.endsWith(s, Qt::CaseSensitive))
+  {
+    chemin.insert(chemin.size(),s);
+  }
+
+  imageSave.save(chemin,"PNG", -1);
+
+
+  /*
   zone->getImage()->imageSave = zone->getImage()->image->copy(zone->getImage()->minX - 10, zone->getImage()->minY - 10,zone->getImage()->maxX - zone->getImage()->minX + 10, zone->getImage()->maxY - zone->getImage()->minY + 20);
 
   QString s(".png");
   if(!chemin.endsWith(s, Qt::CaseSensitive))
   {
-    qDebug() << "Le fichier ne se finit pas par .png";
     chemin.insert(chemin.size(),s);
   }
-  qDebug() << "Le chemin n'est pas vide : " << chemin;
   zone->getImage()->imageSave.save(chemin,"PNG", -1);
 
-  
+  */
 }
 
 void MyMainWindows::chargement(QString chemin)
 {
-  qDebug() << "Chargement en cours...";
-  qDebug() << "Le chemin n'est pas vide : " << chemin;
+  zone->nouveauGraphe();
+
+  QDomDocument doc;
+  QFile file(chemin);
+
+  if(!file.open(QIODevice::ReadOnly)){
+      return;
+  }
+
+  if(!doc.setContent(&file))
+  {
+    //qDebug() << "return setContent";
+  }
+  file.close();
+
+  QString indice;
+  QDomNodeList tab;
+  QDomElement noeud;
+  QDomElement lien;
+  QDomElement racine = doc.documentElement();
+  QDomNode n = racine.firstChild();
+  QDomNode n2 = n.firstChild();
+
+  while(!n2.isNull())
+  {
+    noeud = n2.toElement();
+
+    if(noeud.tagName() == "noeud")
+    {
+        indice = noeud.attribute("indice");
+        tab = noeud.childNodes();
+
+        QString nom = tab.item(0).firstChild().toText().data();
+        QString positionX = tab.item(1).firstChild().toText().data();
+        QString positionY = tab.item(2).firstChild().toText().data();
+        QString largeur = tab.item(3).firstChild().toText().data();
+        QString hauteur = tab.item(4).firstChild().toText().data();
+        QString cFond = tab.item(5).firstChild().toText().data();
+        QString cPolice = tab.item(6).firstChild().toText().data();
+        QString cBordure = tab.item(7).firstChild().toText().data();
+        QString style = tab.item(8).firstChild().toText().data();
+
+        Noeud nouveauNoeud(nom.toStdString(), positionX.toInt(NULL, 10), positionY.toInt(NULL, 10),
+          indice.toInt(NULL, 10), largeur.toInt(NULL, 10), hauteur.toInt(NULL, 10));
+
+        QColor tempFond(cFond);
+        QColor tempPolice(cPolice);
+        QColor tempBordure(cBordure);
+
+        nouveauNoeud.setCouleurFond(tempFond);
+        nouveauNoeud.setCouleurPolice(tempPolice);
+        nouveauNoeud.setCouleurBordure(tempBordure);
+
+        zone->g.m_tabNoeud.push_back(nouveauNoeud);
+
+        //qDebug() << indice;
+        
+        n2 = n2.nextSibling();
+    }
+  }
+
+    n = n.nextSibling();
+    n2 = n.firstChild();
+   // qDebug() << n2.nodeName();
+
+    
+
+    while(!n2.isNull())
+    {
+        lien = n2.toElement();
+
+        if(lien.tagName() == "lien")
+        {
+          indice = lien.attribute("indice");
+          tab = lien.childNodes();
+
+          QString nom = tab.item(0).firstChild().toText().data();
+          QString noeudSource = tab.item(1).firstChild().toText().data();
+          QString noeudCible = tab.item(2).firstChild().toText().data();
+          QString positionX = tab.item(3).firstChild().toText().data();
+          QString positionY = tab.item(4).firstChild().toText().data();
+          QString largeur = tab.item(5).firstChild().toText().data();
+          QString hauteur = tab.item(6).firstChild().toText().data();
+          QString cLien = tab.item(7).firstChild().toText().data();
+          QString cPolice = tab.item(8).firstChild().toText().data();
+          QString fleche = tab.item(9).firstChild().toText().data();
+
+          Lien nouveauLien(nom.toStdString(), noeudSource.toInt(NULL, 10), noeudCible.toInt(NULL, 10), indice.toInt(NULL, 10));
+
+          QColor tempLien(cLien);
+          QColor tempPolice(cPolice);
+
+          nouveauLien.setPositionNomLien(positionX.toInt(NULL, 10), positionY.toInt(NULL, 10));
+          nouveauLien.setCouleurLien(tempLien);
+          nouveauLien.setCouleurPoliceLien(tempPolice);
+          nouveauLien.setFleche(fleche.toInt(NULL, 10));
+          nouveauLien.setWidth(largeur.toInt(NULL, 10));
+          nouveauLien.setHeight(hauteur.toInt(NULL, 10));
+
+          zone->g.m_tabLien.push_back(nouveauLien);
+
+
+        }
+
+          n2 = n2.nextSibling();
+    }
+
+  zone->dessinerGraphe(zone->g);
+
 }
 

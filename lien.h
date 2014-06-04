@@ -12,14 +12,14 @@ class Lien
     Position m_positionNomLien;
     int m_width;
     int m_height;
-    int m_fleche; // 0 1 2
+    //int m_fleche; // 0 1 2
     QColor m_couleurLien;
     QColor m_couleurPoliceLien;
     int m_indice;
+    bool m_visible;
     
 
 public :
-    std::vector<Position> m_tabCassure;
     Lien(std::string nom, int S, int C, int indice);
    
    	std::string getNom() const;
@@ -30,9 +30,9 @@ public :
     int getHeight() const;
     QColor getCouleurLien() const;
     QColor getCouleurPoliceLien() const;
-    int getFleche() const;
+    //int getFleche() const;
     int getIndice() const;
-   	std::vector<Position> getTabCassure() const;
+    bool isVisible() const;
    	void setNom(std::string nom);
     void setNoeudSource(int i);
     void setNoeudCible(int i);
@@ -41,8 +41,9 @@ public :
     void setHeight(int h);
     void setCouleurLien(QColor c);
     void setCouleurPoliceLien(QColor c);
-    void setFleche(int f);
+    //void setFleche(int f);
     void setIndice(int i);
+    void setVisible(bool b);
 
 };
 //test modification pour git

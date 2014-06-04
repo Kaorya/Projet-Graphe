@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'zoneDessin.h'
 **
-** Created: Thu May 22 23:23:47 2014
+** Created: Wed Jun 4 16:55:52 2014
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,12 +23,12 @@ static const uint qt_meta_data_ZoneDessin[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      14,   14, // methods
+      17,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       6,       // signalCount
+       8,       // signalCount
 
  // signals: signature, parameters, type, tag, flags
       12,   11,   11,   11, 0x05,
@@ -37,16 +37,19 @@ static const uint qt_meta_data_ZoneDessin[] = {
       67,   41,   11,   11, 0x05,
       93,   41,   11,   11, 0x05,
      118,   41,   11,   11, 0x05,
+     152,  142,   11,   11, 0x05,
+     174,  142,   11,   11, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-     142,   11,   11,   11, 0x0a,
-     160,  158,   11,   11, 0x0a,
-     194,   41,   11,   11, 0x0a,
-     221,   41,   11,   11, 0x0a,
-     245,   41,   11,   11, 0x0a,
-     264,   41,   11,   11, 0x0a,
-     301,  284,   11,   11, 0x0a,
-     348,   41,   11,   11, 0x0a,
+     194,   11,   11,   11, 0x0a,
+     212,  210,   11,   11, 0x0a,
+     246,   41,   11,   11, 0x0a,
+     273,   41,   11,   11, 0x0a,
+     297,   41,   11,   11, 0x0a,
+     316,   41,   11,   11, 0x0a,
+     353,  336,   11,   11, 0x0a,
+     400,   41,   11,   11, 0x0a,
+     434,  423,   11,   11, 0x0a,
 
        0        // eod
 };
@@ -56,13 +59,15 @@ static const char qt_meta_stringdata_ZoneDessin[] = {
     "x,y\0afficherMenu(int,int)\0"
     "afficherMenuLien(int,int)\0"
     "changerNomNoeud(int,int)\0"
-    "changerNomLien(int,int)\0nouveauGraphe()\0"
-    "s\0recuperationNomNoeud(std::string)\0"
+    "changerNomLien(int,int)\0i,annuler\0"
+    "deconnecter(int,bool)\0connecter(int,bool)\0"
+    "nouveauGraphe()\0s\0recuperationNomNoeud(std::string)\0"
     "recuperationCoord(int,int)\0"
     "mouvementNoeud(int,int)\0clicDroit(int,int)\0"
     "doubleClic(int,int)\0tabNoeud,tabLien\0"
     "suppression(std::vector<int>,std::vector<int>)\0"
-    "releaseSouris(int,int)\0"
+    "releaseSouris(int,int)\0hori,verti\0"
+    "wheelAction(int,int)\0"
 };
 
 void ZoneDessin::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -77,14 +82,17 @@ void ZoneDessin::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 3: _t->afficherMenuLien((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         case 4: _t->changerNomNoeud((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         case 5: _t->changerNomLien((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 6: _t->nouveauGraphe(); break;
-        case 7: _t->recuperationNomNoeud((*reinterpret_cast< std::string(*)>(_a[1]))); break;
-        case 8: _t->recuperationCoord((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 9: _t->mouvementNoeud((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 10: _t->clicDroit((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 11: _t->doubleClic((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 12: _t->suppression((*reinterpret_cast< std::vector<int>(*)>(_a[1])),(*reinterpret_cast< std::vector<int>(*)>(_a[2]))); break;
-        case 13: _t->releaseSouris((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 6: _t->deconnecter((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< bool(*)>(_a[2]))); break;
+        case 7: _t->connecter((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< bool(*)>(_a[2]))); break;
+        case 8: _t->nouveauGraphe(); break;
+        case 9: _t->recuperationNomNoeud((*reinterpret_cast< std::string(*)>(_a[1]))); break;
+        case 10: _t->recuperationCoord((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 11: _t->mouvementNoeud((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 12: _t->clicDroit((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 13: _t->doubleClic((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 14: _t->suppression((*reinterpret_cast< std::vector<int>(*)>(_a[1])),(*reinterpret_cast< std::vector<int>(*)>(_a[2]))); break;
+        case 15: _t->releaseSouris((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 16: _t->wheelAction((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         default: ;
         }
     }
@@ -122,9 +130,9 @@ int ZoneDessin::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 14)
+        if (_id < 17)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 14;
+        _id -= 17;
     }
     return _id;
 }
@@ -167,5 +175,19 @@ void ZoneDessin::changerNomLien(int _t1, int _t2)
 {
     void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
     QMetaObject::activate(this, &staticMetaObject, 5, _a);
+}
+
+// SIGNAL 6
+void ZoneDessin::deconnecter(int _t1, bool _t2)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
+    QMetaObject::activate(this, &staticMetaObject, 6, _a);
+}
+
+// SIGNAL 7
+void ZoneDessin::connecter(int _t1, bool _t2)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
+    QMetaObject::activate(this, &staticMetaObject, 7, _a);
 }
 QT_END_MOC_NAMESPACE

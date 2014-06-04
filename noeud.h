@@ -14,10 +14,11 @@ class Noeud
     QColor m_couleurFond;
     QColor m_couleurPolice;
     QColor m_couleurBordure;
-    int m_style; // 0 1 mettre une enum plus tard
+    //int m_style; // 0 1 mettre une enum plus tard
     int m_indice;
     int m_widthRect;
     int m_heigth;
+    bool m_visible;
     //bool estdansleNoeud;
 
 
@@ -25,6 +26,7 @@ public :
         Noeud(std::string nom, int indice);
         Noeud(std::string nom, int x, int y, int indice, int width, int heigth);
         Noeud(std::string nom, Position const &p, int indice);
+        Noeud(const Noeud &n);
         
         std::string getNom() const;
         const Position getPosition() const;
@@ -33,7 +35,8 @@ public :
         QColor getCouleurBordure() const;
         int getWidth() const;
         int getHeight() const;
-        int getStyle() const;
+        //int getStyle() const;
+        bool isVisible() const;
 
         int getIndice() const;
         void setNom(std::string nom);
@@ -44,7 +47,8 @@ public :
         void setWidth(int w);
         void setHeigth(int h);
         void setIndice(int i);
-        void setStyle(int s);
+        //void setStyle(int s);
+        void setVisible(bool b);
    
 };
 

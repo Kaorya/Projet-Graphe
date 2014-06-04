@@ -16,11 +16,9 @@ DialogChangeStyle::DialogChangeStyle(QWidget * parent) : QDialog(parent)
 	txtCouleurPolice = new QLabel("Couleur de la police : ");
 	txtCouleurFond = new QLabel("Couleur de fond : ");
 	txtCouleurBordure = new QLabel("Couleur de la bordure : ");
-	txtStyleBordure = new QLabel("Style de la bordure : ");
 	cCouleurPolice = new QComboBox();
 	cCouleurFond = new QComboBox();
 	cCouleurBordure = new QComboBox();
-	cStyleBordure = new QComboBox();
 	bValider = new QPushButton("Valider");
 	bAnnuler = new QPushButton("Annuler");
 
@@ -58,9 +56,6 @@ DialogChangeStyle::DialogChangeStyle(QWidget * parent) : QDialog(parent)
     cCouleurBordure->addItem("Noir");
     cCouleurBordure->addItem("Blanc");
 
-    cStyleBordure->addItem("Rectangle");
-    cStyleBordure->addItem("Ellipse");
-
 	//******************************************************//
     //       Ajout des widget/layout à l'affichage
     //******************************************************//
@@ -70,11 +65,9 @@ DialogChangeStyle::DialogChangeStyle(QWidget * parent) : QDialog(parent)
 	vboxCombo->addWidget(cCouleurPolice);
 	vboxCombo->addWidget(cCouleurFond);
 	vboxCombo->addWidget(cCouleurBordure);
-	vboxCombo->addWidget(cStyleBordure);
 	vboxTexte->addWidget(txtCouleurPolice);
 	vboxTexte->addWidget(txtCouleurFond);
 	vboxTexte->addWidget(txtCouleurBordure);
-	vboxTexte->addWidget(txtStyleBordure);
 
 	hboxPrincipale->addLayout(vboxTexte);
 	hboxPrincipale->addLayout(vboxCombo);
@@ -265,11 +258,6 @@ QColor DialogChangeStyle::getCouleurBordure() const
 
 }
 
-int DialogChangeStyle::getStyle() const
-{
-	return cStyleBordure->currentIndex();
-}
-
 void  DialogChangeStyle::setCouleurPolice(QString s)
 {
 	int i = cCouleurPolice->findText(s, Qt::MatchExactly);
@@ -284,8 +272,4 @@ void  DialogChangeStyle::setCouleurBordure(QString s)
 {
 	int i = cCouleurBordure->findText(s, Qt::MatchExactly);
 	cCouleurBordure->setCurrentIndex(i);
-}
-void DialogChangeStyle::setStyle(int i)
-{
-	cStyleBordure->setCurrentIndex(i);
 }

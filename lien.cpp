@@ -1,10 +1,11 @@
 #include "lien.h"
 
-Lien::Lien(std::string nom, int S, int C, int indice):m_nom(nom),m_noeudSource(S),m_noeudCible(C),m_fleche(0),m_indice(indice)
+Lien::Lien(std::string nom, int S, int C, int indice):m_nom(nom),m_noeudSource(S),m_noeudCible(C),m_indice(indice)
 {
 	//std::cout << "Lien cree" << std::endl;
 	m_couleurLien = Qt::blue;
 	m_couleurPoliceLien = Qt::blue;
+	m_visible = true;
 }
 
 std::string Lien::getNom() const
@@ -23,10 +24,6 @@ const Position Lien::getPosition() const
 {
 	return m_positionNomLien;
 }
-std::vector<Position> Lien::getTabCassure() const
-{
-	return m_tabCassure;
-}
 QColor Lien::getCouleurLien() const
 {
 	return m_couleurLien;
@@ -35,10 +32,7 @@ QColor Lien::getCouleurPoliceLien() const
 {
 	return m_couleurPoliceLien;
 }
-int Lien::getFleche() const
-{
-	return m_fleche;
-}
+
 int Lien::getWidth() const
 {
 	return m_width;
@@ -50,6 +44,10 @@ int Lien::getHeight() const
 int Lien::getIndice() const
 {
 	return m_indice;
+}
+bool Lien::isVisible() const
+{
+	return m_visible;
 }
 
 //setters
@@ -86,11 +84,12 @@ void Lien::setCouleurLien(QColor c)
  {
  	m_couleurPoliceLien = c;
  }
-void Lien::setFleche(int f)
-{
-	m_fleche = f;
-}
+
 void Lien::setIndice(int i)
 {
 	m_indice = i;
+}
+void Lien::setVisible(bool b)
+{
+	m_visible = b;
 }

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'myQView.h'
 **
-** Created: Thu May 22 23:23:46 2014
+** Created: Wed Jun 4 16:35:59 2014
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,12 +23,12 @@ static const uint qt_meta_data_MyQView[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       5,   14, // methods
+       6,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       5,       // signalCount
+       6,       // signalCount
 
  // signals: signature, parameters, type, tag, flags
       13,    9,    8,    8, 0x05,
@@ -36,6 +36,7 @@ static const uint qt_meta_data_MyQView[] = {
       59,    9,    8,    8, 0x05,
       84,    9,    8,    8, 0x05,
      104,    9,    8,    8, 0x05,
+     136,  125,    8,    8, 0x05,
 
        0        // eod
 };
@@ -44,7 +45,8 @@ static const char qt_meta_stringdata_MyQView[] = {
     "MyQView\0\0x,y\0envoieCoord(int,int)\0"
     "envoieClicDroit(int,int)\0"
     "mouvementSouris(int,int)\0doubleClic(int,int)\0"
-    "relachement(int,int)\0"
+    "relachement(int,int)\0hori,verti\0"
+    "wheelAction(int,int)\0"
 };
 
 void MyQView::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -58,6 +60,7 @@ void MyQView::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         case 2: _t->mouvementSouris((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         case 3: _t->doubleClic((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         case 4: _t->relachement((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 5: _t->wheelAction((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         default: ;
         }
     }
@@ -95,9 +98,9 @@ int MyQView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 5)
+        if (_id < 6)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 6;
     }
     return _id;
 }
@@ -135,5 +138,12 @@ void MyQView::relachement(int _t1, int _t2)
 {
     void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
+}
+
+// SIGNAL 5
+void MyQView::wheelAction(int _t1, int _t2)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
+    QMetaObject::activate(this, &staticMetaObject, 5, _a);
 }
 QT_END_MOC_NAMESPACE

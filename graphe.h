@@ -14,9 +14,10 @@ public:
 
 	Graphe();
 	~Graphe();
-
-	//std::vector<Noeud> getTabNoeud() const;
-	//std::vector<Lien> getTabLien() const;
+/*
+	void supprimerNoeud(int i);
+	void supprimerLien(int i);
+*/
 };
 
 #endif

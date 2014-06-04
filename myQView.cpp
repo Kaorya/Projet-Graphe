@@ -1,10 +1,14 @@
 #include "myQView.h"
 #include <string>
 #include <QDebug>
+#include <qmath.h>
+#include <QGraphicsItem>
 
 MyQView::MyQView(QGraphicsScene *scene, QWidget *parent):QGraphicsView(scene,parent)
 {
   //image = NULL;
+  verticalScrollBar()->installEventFilter(this);
+  horizontalScrollBar()->installEventFilter(this);
 
 }
 MyQView::MyQView()
@@ -43,3 +47,48 @@ void  MyQView::mouseReleaseEvent(QMouseEvent *e)
 {
   emit relachement(e->x() + horizontalScrollBar()->sliderPosition(),e->y() + verticalScrollBar()->sliderPosition());
 }
+
+bool MyQView::eventFilter(QObject * obj, QEvent * event)
+{
+  if(event->type() == QEvent::Wheel)
+  {
+    // faire le zoom plus tard
+    //this->setSceneRect();
+    //centerOn(event->type().x(), event->type().y());
+    return true;
+  }
+  else
+  {
+    return QGraphicsView::eventFilter(obj, event);
+  }
+}
+void MyQView::wheelEvent(QWheelEvent* event)
+{
+    //setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    int horizontalPosition = horizontalScrollBar()->sliderPosition();
+    int verticalPosition = verticalScrollBar()->sliderPosition();
+
+ 
+    // Scale the view / do the zoom
+    double scaleFactor = 1.15;
+    if(event->delta() > 0) {
+        // Zoom in
+        scale(scaleFactor, scaleFactor);
+        qDebug() << "Ancienne position horizontal scrollBar : " << horizontalPosition;
+        qDebug() << "Nouvelle position horizontal scrollBar : " << horizontalScrollBar()->sliderPosition();
+    } else {
+        // Zooming out
+        scale(1.0 / scaleFactor, 1.0 / scaleFactor);
+    }
+
+    emit wheelAction(horizontalPosition, verticalPosition);
+/*
+   QTransform t = transform();
+   QList<QGraphicsItem *> list = scene()->items();
+   for(int i = 0; i < list.size(); i++)
+   {
+    list[i]->setTransform(t);
+   }
+   */
+}
+

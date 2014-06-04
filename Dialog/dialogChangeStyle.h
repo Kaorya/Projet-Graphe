@@ -37,11 +37,9 @@ class DialogChangeStyle : public QDialog
 	        QLabel		*txtCouleurPolice;
 	        QLabel		*txtCouleurFond;
 	        QLabel		*txtCouleurBordure;
-	        QLabel		*txtStyleBordure;
 	        QComboBox   *cCouleurPolice;
 	        QComboBox   *cCouleurFond;
 	        QComboBox   *cCouleurBordure;
-	   		QComboBox	*cStyleBordure;
 	        QPushButton *bValider;
 	        QPushButton *bAnnuler;
 
@@ -54,13 +52,10 @@ class DialogChangeStyle : public QDialog
 		QColor getCouleurPolice() const;
 		QColor getCouleurFond() const;
 		QColor getCouleurBordure() const;
-		int getStyle() const;
 
 		void setCouleurPolice(QString s);
 		void setCouleurFond(QString s);
 		void setCouleurBordure(QString s);
-		void setStyle(int i);
-
 
 
 };

@@ -12,6 +12,8 @@ int main(int argc, char** argv){
         QApplication CarteConceptuelle(argc, argv);
         
         MyMainWindows *MainWin = new MyMainWindows;
+
+        MainWin->connect(MainWin->getAboutQt(), SIGNAL(triggered()), &CarteConceptuelle, SLOT(aboutQt()));
                 
         MainWin->show();      
 

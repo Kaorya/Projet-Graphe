@@ -16,11 +16,12 @@
 
 class MyQView: public QGraphicsView
 {
-public:
+
 
         Q_OBJECT
 
 public:
+
         MyQView(QGraphicsScene *scene, QWidget* parent = 0);
         MyQView();
         QSize sizeHint() const;
@@ -34,8 +35,8 @@ signals:
     void mouvementSouris(int x, int y);
     void doubleClic(int x, int y);
     void relachement(int x, int y);
+    void wheelAction(int hori, int verti);
 
-private slots:
 
 protected:
 
@@ -43,6 +44,9 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mouseDoubleClickEvent(QMouseEvent *e);
     virtual void mouseReleaseEvent(QMouseEvent *e);
+
+    bool eventFilter(QObject * obj, QEvent * event);
+    virtual void wheelEvent(QWheelEvent* event);
 };
 
 #endif

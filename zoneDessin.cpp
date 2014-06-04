@@ -1,5 +1,4 @@
 #include "zoneDessin.h"
-//TODO : Essayer de récupéré les coord lorsqu'un clic est effectué sur la zone
 
 ZoneDessin::ZoneDessin(QWidget *):positionInitiale(0,0), maxX(0), maxY(0), minX(4000), minY(4000)
 {
@@ -7,8 +6,6 @@ ZoneDessin::ZoneDessin(QWidget *):positionInitiale(0,0), maxX(0), maxY(0), minX(
 	scene = new QGraphicsScene(rect,this);
 	view = new MyQView(scene,this);
 	proxy = new QGraphicsProxyWidget();
-
-	//scene->setBackgroundBrush(Qt::white);
 
 	vLayout = new QVBoxLayout();
 
@@ -20,23 +17,34 @@ ZoneDessin::ZoneDessin(QWidget *):positionInitiale(0,0), maxX(0), maxY(0), minX(
 	m_ajoutNoeud = false;
 	m_ajoutLien = false;
 	m_supression = false;
-	m_selection = false;
+	m_selection = true;
 	m_deplacer = false;
 	m_onPeutSeDeplacer = false;
 	m_press = false,
+	m_noeudBouge = false;
 	nbrClic = 0;
 	derniereSelection = 0;
+	dernierEventUndo = -1;
+	dernierEventRedo = -1;
 	plusHautTexte = 6;
 	plusHautRect = 5;
-	//view->horizontalScrollBar()->setMaximum(4000);
 
 	dernierNoeudSelect = NULL;
 	dernierLienSelect = NULL;
+	rectangleSelection = NULL;
+	noeudSelect = -1;
+	lienSelect = -1;
+
+
+	stack = new QUndoStack(this);
+	stack->setUndoLimit(10);
+
 	connect(view, SIGNAL(envoieCoord(int, int)), this, SLOT(recuperationCoord(int, int)));
 	connect(view, SIGNAL(mouvementSouris(int, int)), this, SLOT(mouvementNoeud(int , int)));
 	connect(view, SIGNAL(relachement(int, int)), this, SLOT(releaseSouris(int, int)));
 	connect(view, SIGNAL(envoieClicDroit(int, int)), this, SLOT(clicDroit(int, int)));
 	connect(view, SIGNAL(doubleClic(int, int)), this, SLOT(doubleClic(int, int)));
+	connect(view, SIGNAL(wheelAction(int, int)), this, SLOT(wheelAction(int, int)));
 
 }
 
@@ -46,6 +54,7 @@ ZoneDessin::~ZoneDessin()
 	delete view;
 	delete dernierNoeudSelect;
 	delete dernierLienSelect;
+	delete rectangleSelection;
 }
 
 QSize ZoneDessin::sizeHint() const
@@ -53,32 +62,31 @@ QSize ZoneDessin::sizeHint() const
 	return QSize(4000,4000);
 }
 
-void ZoneDessin::resizeEvent(QResizeEvent *e)
-{
-
-		
-
-
-	
-}
-
-void ZoneDessin::paintEvent(QPaintEvent *e)
-{
-	/*
-    vLayout->addWidget(view);
-    setLayout(vLayout);
-    */
-}
 
 
 void ZoneDessin::recuperationCoord(int x , int y)
 {
+	/*
+	for(int i = 0; i < g.m_tabNoeud.size(); i++)
+	{
+		qDebug() << "Position du noeud" << i << " (" << g.m_tabNoeud[i].getPosition().getX() << "," << g.m_tabNoeud[i].getPosition().getY() << ")";
+	}
+*/
 	//qDebug() << "Position (" << x << "," << y << ")";
+	//qDebug() << "Position scene : " << view->mapToScene(x,y);
+
 	std::vector<Noeud> listeNoeuds;
 	listeNoeuds = estDansLesNoeuds(x, y);
 	std::vector<Lien> listeLien;
 	listeLien = estDansLesLiens(x, y);
 	m_press = true;
+
+	if(rectangleSelection)
+	{
+		scene->removeItem(rectangleSelection);
+		rectangleSelection = NULL;
+		//qDebug() << "pointeur deleted au clic";
+	}
 
 	if(m_ajoutNoeud)
 	{
@@ -121,19 +129,12 @@ void ZoneDessin::recuperationCoord(int x , int y)
 				tabRect.push_back(scene->addRect(rectNoeud, pen, brush));
 				tabRect[n.getIndice()]->setZValue(3);
 				tabRect[n.getIndice()]->setPos(p);
-				//tabRect[n.getIndice()]->setParentItem(tabTxtRect[n.getIndice()]);
 
-				if(x + n.getWidth()/2 + 10 > maxX)
-				    maxX = x + n.getWidth()/2 + 10;
-				if(y + n.getHeight()/2 + 5 > maxY)
-				    maxY = y + n.getHeight()/2 + 5;
-				if(x - n.getWidth()/2 - 5 < minX)
-				    minX = x - n.getWidth()/2 -5 ;
-				if(y - n.getHeight()/2 < minY)
-				    minY = y - n.getHeight()/2;
-				
 
-			
+	        	CommandCreerNoeud* commande = new CommandCreerNoeud(this, n.getIndice());
+	        	stack->push(commande);
+
+		       
 			}
 
 		}
@@ -150,15 +151,25 @@ void ZoneDessin::recuperationCoord(int x , int y)
 		{
 			noeudS = listeNoeuds[listeNoeuds.size()-1].getIndice();
 			listeNoeuds.clear();
+			QPen p(Qt::DotLine);
+			p.setColor(g.m_tabNoeud[noeudS].getCouleurBordure());
+			tabRect[noeudS]->setPen(p);
 			//qDebug() << "noeudS : " << noeudS;
 		}
 
 	  	if(nbrClic == 2 && !listeNoeuds.empty())
 	  	{
+	  		QPen p5(Qt::DotLine);
+			p5.setColor(g.m_tabNoeud[listeNoeuds[listeNoeuds.size()-1].getIndice()].getCouleurBordure());
+			tabRect[listeNoeuds[listeNoeuds.size()-1].getIndice()]->setPen(p5);
+
 	  		emit nouveauLien();
 	  		if(m_ajoutLien)
 	  		{
 		  		noeudC = listeNoeuds[listeNoeuds.size()-1].getIndice();
+		  		QPen p5(Qt::DotLine);
+				p5.setColor(g.m_tabNoeud[noeudC].getCouleurBordure());
+				tabRect[noeudC]->setPen(p5);
 		  		//qDebug() << "noeudC : " << noeudC;
 		  		Lien l(m_dernierNom,noeudS,noeudC, g.m_tabLien.size()); // a modifier avec identifiant de noeud
 		  		int x1 = g.m_tabNoeud[l.getNoeudSource()].getPosition().getX();
@@ -178,6 +189,14 @@ void ZoneDessin::recuperationCoord(int x , int y)
 			  	QString s = QString::fromStdString(l.getNom());
 			  	//qDebug() << "Nom : " << s;
 			  	g.m_tabLien.push_back(l);
+
+			  	QPen p4(Qt::SolidLine);
+				p4.setColor(g.m_tabNoeud[noeudS].getCouleurBordure());
+				tabRect[noeudS]->setPen(p4);
+
+				QPen p6(Qt::SolidLine);
+				p6.setColor(g.m_tabNoeud[noeudC].getCouleurBordure());
+				tabRect[noeudC]->setPen(p6);
 
 			  	QLine line(x1, y1, x2, y2);
 			  	QLineF ligneLien(line);
@@ -206,6 +225,9 @@ void ZoneDessin::recuperationCoord(int x , int y)
 				
 				tabTxtLine[l.getIndice()]->setZValue(2);
 
+				CommandCreerLien* commande = new CommandCreerLien(this, l.getIndice());
+				stack->push(commande);
+
 
 				
 			}
@@ -216,25 +238,87 @@ void ZoneDessin::recuperationCoord(int x , int y)
 	}
 	else if(m_selection)
 	{
+		for(int i = 0; i < tabRect.size(); i++)
+		{
+			if(tabRect[i]->pen().style() == Qt::DotLine)
+			{
+				QPen pen(Qt::SolidLine);
+				pen.setColor(g.m_tabNoeud[i].getCouleurBordure());
+				tabRect[i]->setPen(pen);
+			}
+			vNoeud.clear();
+		}
+
+		for(int i = 0; i < tabLine.size(); i++)
+		{
+			if(tabLine[i]->pen().style() == Qt::DotLine)
+			{
+				QPen pen(Qt::SolidLine);
+				pen.setColor(g.m_tabLien[i].getCouleurLien());
+				tabLine[i]->setPen(pen);
+			}
+			vLien.clear();
+		}
+
 		if(!listeNoeuds.empty())
 		{
+
+		if(lienSelect > -1)
+		{
+			QPen p3(Qt::SolidLine);
+			p3.setColor(g.m_tabLien[lienSelect].getCouleurLien());
+			tabLine[lienSelect]->setPen(p3);
+		}
+
+		if(noeudSelect > -1)
+		{
+			QPen p2(Qt::SolidLine);
+			p2.setColor(g.m_tabNoeud[noeudSelect].getCouleurBordure());
+			tabRect[noeudSelect]->setPen(p2);
+		}
+
 			//qDebug() << "on est dans un noeud : no " << listeNoeuds[listeNoeuds.size()-1].getIndice();
 			dernierNoeudSelect = new int(listeNoeuds[listeNoeuds.size()-1].getIndice());
-			//qDebug() << "dernier noeud select = " << *dernierNoeudSelect;
-			//qDebug() << "plusHautRect : " << plusHautRect << " , plusHautTexte : " << plusHautTexte;
+
 			tabTxtRect[*dernierNoeudSelect]->setZValue(plusHautTexte);
 			tabRect[*dernierNoeudSelect]->setZValue(plusHautRect);
 
 			plusHautRect+=2;
 			plusHautTexte+=2;
 			
+			QPen p(Qt::DotLine);
+			p.setColor(g.m_tabNoeud[*dernierNoeudSelect].getCouleurBordure());
+			tabRect[*dernierNoeudSelect]->setPen(p);
 			
 			derniereSelection = 1;
 		}
 		else if(!listeLien.empty())
 		{
+
+		if(lienSelect > -1)
+		{
+			QPen p3(Qt::SolidLine);
+			p3.setColor(g.m_tabLien[lienSelect].getCouleurLien());
+			tabLine[lienSelect]->setPen(p3);
+		}
+
+		if(noeudSelect > -1)
+		{
+			QPen p2(Qt::SolidLine);
+			p2.setColor(g.m_tabNoeud[noeudSelect].getCouleurBordure());
+			tabRect[noeudSelect]->setPen(p2);
+		}
+
 			//qDebug() << "on est sur le lien patate no " << listeLien[listeLien.size()-1].getIndice();
 			dernierLienSelect = new int(listeLien[listeLien.size()-1].getIndice());
+
+			//mise en évidence du lien selectionné
+			QPen p(Qt::DotLine);
+			p.setColor(g.m_tabLien[*dernierLienSelect].getCouleurLien());
+			tabLine[*dernierLienSelect]->setPen(p);
+
+
+
 			derniereSelection = 2;
 		}
 		positionInitiale.setX(x);
@@ -266,6 +350,8 @@ void ZoneDessin::mouvementNoeud(int x, int y)
 			y = scene->height();
 		if(dernierNoeudSelect)
 		{	
+			m_noeudBouge = true;
+
 			g.m_tabNoeud[*dernierNoeudSelect].setPosition(x,y);
 			
 			for(unsigned int i = 0; i < g.m_tabLien.size(); i++)
@@ -289,22 +375,63 @@ void ZoneDessin::mouvementNoeud(int x, int y)
 				}
 			}
 			
-			//qDebug() << "pos (" << x << "," << y << ")"; 
 			tabRect[*dernierNoeudSelect]->setPos(x - g.m_tabNoeud[*dernierNoeudSelect].getWidth()/2,y - g.m_tabNoeud[*dernierNoeudSelect].getHeight()/2);
 			tabTxtRect[*dernierNoeudSelect]->setPos(x - g.m_tabNoeud[*dernierNoeudSelect].getWidth()/2,y - g.m_tabNoeud[*dernierNoeudSelect].getHeight()/2);
 
-			//dessinerGraphe(g);
-			//qDebug() << "dernierNoeudSelect not null";
 		}
 		else
 		{
-			/*
-			QColor c(0,153,255,50);
-			if(x > positionInitiale.getX() && y > positionInitiale.getY())
-				image->dessineRect(positionInitiale.getX(), positionInitiale.getY(), x - positionInitiale.getX(), y - positionInitiale.getY(), c, c);
-			else if(x > positionInitiale.getX() && y < positionInitiale.getY())
-				image->dessineRect(positionInitiale.getX(), positionInitiale.getY(), x - positionInitiale.getX(), positionInitiale.getY() - y, c, c);
-			*/
+			if(m_press)
+			{
+				if(rectangleSelection)
+				{
+					scene->removeItem(rectangleSelection);
+					rectangleSelection = NULL;
+				}
+
+				QColor c(0,153,255);
+				QPen bordureSelection(c);
+				QBrush fondSelection(c);
+				if(x > positionInitiale.getX() && y > positionInitiale.getY())
+				{
+					QPointF pTopLeft(positionInitiale.getX(), positionInitiale.getY());
+					QPointF pBottomRight(x,y);
+					QRectF rect(pTopLeft, pBottomRight);
+					rectangleSelection = scene->addRect(rect, bordureSelection, fondSelection);
+					rectangleSelection->setOpacity(0.6);
+					rectangleSelection->setZValue(plusHautTexte);
+				}
+				else if(x > positionInitiale.getX() && y < positionInitiale.getY())
+				{
+					QPointF pTopLeft(positionInitiale.getX(), y);
+					QPointF pBottomRight(x,positionInitiale.getY());
+					QRectF rect(pTopLeft, pBottomRight);
+					rectangleSelection = scene->addRect(rect, bordureSelection, fondSelection);
+					rectangleSelection->setOpacity(0.6);
+					rectangleSelection->setZValue(plusHautTexte);
+				}
+				else if(x < positionInitiale.getX() && y < positionInitiale.getY())
+				{
+					QPointF pTopLeft(x, y);
+					QPointF pBottomRight(positionInitiale.getX(),positionInitiale.getY());
+					QRectF rect(pTopLeft, pBottomRight);
+					rectangleSelection = scene->addRect(rect, bordureSelection, fondSelection);
+					rectangleSelection->setOpacity(0.6);
+					rectangleSelection->setZValue(plusHautTexte);	
+				}
+				else if(x < positionInitiale.getX() && y > positionInitiale.getY())
+				{
+					QPointF pTopLeft(x, positionInitiale.getY());
+					QPointF pBottomRight(positionInitiale.getX(),y);
+					QRectF rect(pTopLeft, pBottomRight);
+					rectangleSelection = scene->addRect(rect, bordureSelection, fondSelection);
+					rectangleSelection->setOpacity(0.6);
+					rectangleSelection->setZValue(plusHautTexte);
+				}
+
+			}
+
+
 		}			
 		
 
@@ -331,6 +458,12 @@ void ZoneDessin::mouvementNoeud(int x, int y)
 
 void ZoneDessin::clicDroit(int x, int y)
 {
+		if(rectangleSelection)
+		{
+			scene->removeItem(rectangleSelection);
+			rectangleSelection = NULL;
+		}		
+
 
 		std::vector<Noeud> listeNoeud = estDansLesNoeuds(x,y);
 		std::vector<Lien> listeLien = estDansLesLiens(x,y);
@@ -346,6 +479,12 @@ void ZoneDessin::clicDroit(int x, int y)
 
 void ZoneDessin::doubleClic(int x, int y)
 {
+	if(rectangleSelection)
+	{
+		scene->removeItem(rectangleSelection);
+		rectangleSelection = NULL;
+	}
+
 	if(m_selection)
 	{
 		std::vector<Noeud> listeNoeud = estDansLesNoeuds(x,y);
@@ -380,12 +519,66 @@ void ZoneDessin::releaseSouris(int x, int y)
 			delete dernierNoeudSelect;
 			//qDebug() << "dernierNoeudSelect deleted";
 			dernierNoeudSelect = NULL;
+
+			if(m_noeudBouge)
+			{
+				QPoint pAvant(positionInitiale.getX(),positionInitiale.getY());
+				QPoint pApres(x,y);
+				CommandChangerPositionNoeud* commande = new CommandChangerPositionNoeud(this, noeudSelect, pAvant, pApres);
+				stack->push(commande);
+				m_noeudBouge = false;
+			}
 		}	
 		positionFinale.setX(x);
 		positionFinale.setY(y);
 
 		QRect(positionInitiale.getX(), positionInitiale.getY(), positionFinale.getX() - positionInitiale.getX()
 			,positionFinale.getY() - positionInitiale.getY());
+
+		if(dernierLienSelect)
+		{
+			lienSelect = *dernierLienSelect;
+			delete dernierLienSelect;
+			dernierLienSelect = NULL;
+		}
+
+		if(rectangleSelection)
+		{
+			for(int i = 0; i < tabRect.size(); i++)
+			{
+				if(g.m_tabNoeud[i].isVisible())
+				{
+					if(tabRect[i]->collidesWithItem (rectangleSelection, Qt::IntersectsItemShape))
+					{
+						QPen p(Qt::DotLine);
+						p.setColor(g.m_tabNoeud[i].getCouleurBordure());
+						tabRect[i]->setPen(p);
+
+						vNoeud.push_back(i);
+					}
+				}
+			}
+
+			for(int i = 0; i < tabLine.size(); i++)
+			{
+				if(g.m_tabLien[i].isVisible())
+				{
+					if(tabLine[i]->collidesWithItem(rectangleSelection, Qt::IntersectsItemShape))
+					{
+						QPen p(Qt::DotLine);
+						p.setColor(g.m_tabLien[i].getCouleurLien());
+						tabLine[i]->setPen(p);
+
+						vLien.push_back(i);
+					}
+				}
+			}
+
+			scene->removeItem(rectangleSelection);
+			rectangleSelection = NULL;
+
+		}
+
 
 	}
 	m_onPeutSeDeplacer = false;
@@ -403,6 +596,15 @@ void ZoneDessin::nouveauGraphe()
 	tabLine.clear();
 	tabTxtLine.clear();
 	tabRectLine.clear();
+	stack->clear();
+
+	maxX = 0;
+	minX = 4000;
+	maxY = 0;
+	minY = 4000;
+
+	derniereSelection = 0;
+	//dernierEvent = -1;
 
 	delete scene;
 	QRectF rect(0,0,4000,4000);
@@ -423,26 +625,37 @@ void ZoneDessin::suppression(std::vector<int> tabNoeud, std::vector<int> tabLien
 	{
 		if(!(tabNoeud.empty()) || !(tabLien.empty()))
 		{	
+
 			//qDebug() << "il y a quelque chose a supprimer";
 			std::sort(tabNoeud.begin(),tabNoeud.end());
+			std::sort(tabLien.begin(),tabLien.end());
+			//qDebug() << "Noeuds : ";
+
 			for(unsigned int i = 0; i < tabNoeud.size(); i++)
 			{
-				qDebug() << tabNoeud[i];
-			}
-			for(unsigned int i = 0; i < tabNoeud.size(); i++)
-			{
-				//qDebug() << "noeud a suppr : " << tabNoeud[i];
+				//qDebug() << "noeud a suppr : " << tabNoeud[i]-i;
 				if(g.m_tabNoeud.size() >= 1)
 				{
-					//qDebug() << "Il y a au moins 1 noeud a delete";
 					//effacer les liens correspondant
 					for(unsigned int j = 0; j < g.m_tabLien.size(); j++)
 					{
-
-						if(g.m_tabLien[j].getNoeudSource() == tabNoeud[i] || g.m_tabLien[j].getNoeudCible() == tabNoeud[i])
+						//qDebug() << "for des liens a delete";
+						if(g.m_tabLien[j].getNoeudSource() == tabNoeud[i]-i || g.m_tabLien[j].getNoeudCible() == tabNoeud[i]-i)
 						{
+							if(g.m_tabLien[j].isVisible())
 
+								g.m_tabLien[j].setVisible(false);
 
+								tabLine[j]->setActive(false);
+								tabRectLine[j]->setActive(false);
+								tabTxtLine[j]->setActive(false);
+							
+								tabLine[j]->hide();
+								tabRectLine[j]->hide();
+								tabTxtLine[j]->hide();
+
+							//Ancienne méthode de suppression
+							/*
 							g.m_tabLien.erase(g.m_tabLien.begin()+j);
 							scene->removeItem(tabLine[j]);
 							scene->removeItem(tabRectLine[j]);
@@ -460,45 +673,98 @@ void ZoneDessin::suppression(std::vector<int> tabNoeud, std::vector<int> tabLien
 							{
 								g.m_tabLien[k].setIndice(g.m_tabLien[k].getIndice()-1);
 							}
+							*/
 						}
 					}
-
+/*
 					for(unsigned int j = 0; j < g.m_tabLien.size(); j++)
 					{
 
-						if(g.m_tabLien[j].getNoeudSource() > tabNoeud[i])
+						if(g.m_tabLien[j].getNoeudSource() > tabNoeud[i]-i)
 						{
 							g.m_tabLien[j].setNoeudSource(g.m_tabLien[j].getNoeudSource()-1);
 						}
-						if(g.m_tabLien[j].getNoeudCible() > tabNoeud[i])
+						if(g.m_tabLien[j].getNoeudCible() > tabNoeud[i]-i)
 						{
 							g.m_tabLien[j].setNoeudCible(g.m_tabLien[j].getNoeudCible()-1);
 						}
 					}
-					
+*/
 
-					
+					//qDebug() << " apres le for des liens a delete";
 
-					g.m_tabNoeud.erase(g.m_tabNoeud.begin()+tabNoeud[i]);
-					scene->removeItem(tabRect[tabNoeud[i]]);
-					scene->removeItem(tabTxtRect[tabNoeud[i]]);
-					delete tabRect[tabNoeud[i]];
-					delete tabTxtRect[tabNoeud[i]];
-					tabTxtRect.erase(tabTxtRect.begin()+tabNoeud[i]);
-					tabRect.erase(tabRect.begin()+tabNoeud[i]);
+					g.m_tabNoeud[tabNoeud[i]].setVisible(false);
 
-					for(unsigned int j = tabNoeud[i]; j < g.m_tabNoeud.size(); j++)
+					tabRect[tabNoeud[i]]->setActive(false);
+					tabTxtRect[tabNoeud[i]]->setActive(false);
+					tabRect[tabNoeud[i]]->hide();
+					tabTxtRect[tabNoeud[i]]->hide();
+
+					//scene->removeItem(tabRect[tabNoeud[i]]);
+					//scene->removeItem(tabTxtRect[tabNoeud[i]]);
+
+/*
+					g.m_tabNoeud.erase(g.m_tabNoeud.begin()+tabNoeud[i]-i);
+					scene->removeItem(tabRect[tabNoeud[i]-i]);
+					scene->removeItem(tabTxtRect[tabNoeud[i]-i]);
+					delete tabRect[tabNoeud[i]-i];
+					delete tabTxtRect[tabNoeud[i]-i];
+					//qDebug() << " tac 4 : " << tabNoeud[i]-i << "size de tabTxtRect :" << tabTxtRect.size();
+					tabTxtRect.erase(tabTxtRect.begin()+tabNoeud[i]-i);
+					tabRect.erase(tabRect.begin()+tabNoeud[i]-i);
+
+					//qDebug() << "le noeud et le rectangle doivent etre suppr";
+
+					for(unsigned int j = tabNoeud[i]-i; j < g.m_tabNoeud.size(); j++)
 					{
 						g.m_tabNoeud[j].setIndice(g.m_tabNoeud[j].getIndice()-1);
 						//qDebug() << "Indice du noeud " << j << " : " << g.m_tabNoeud[j].getIndice();
 					}
+	*/
 				}
 
 			}
 
+			for(unsigned int i = 0; i < tabLien.size(); i++)
+			{
+				//qDebug() << "for des liens a delete";
+				
+
+				g.m_tabLien[tabLien[i]].setVisible(false);
+				tabRectLine[tabLien[i]]->setActive(false);
+				tabLine[tabLien[i]]->setActive(false);
+				tabTxtLine[tabLien[i]]->setActive(false);
+
+				tabRectLine[tabLien[i]]->hide();
+				tabLine[tabLien[i]]->hide();
+				tabTxtLine[tabLien[i]]->hide();
+/*
+				g.m_tabLien.erase(g.m_tabLien.begin()+tabLien[i]-i);
+
+
+				delete tabLine[tabLien[i]-i];
+				delete tabRectLine[tabLien[i]-i];
+				delete tabTxtLine[tabLien[i]-i];
+				tabLine.erase(tabLine.begin()+tabLien[i]-i);
+				tabRectLine.erase(tabRectLine.begin()+tabLien[i]-i);
+				tabTxtLine.erase(tabTxtLine.begin()+tabLien[i]-i);
+
+				for(unsigned int k = tabLien[i]-i; k < g.m_tabLien.size(); k++)
+				{
+					g.m_tabLien[k].setIndice(g.m_tabLien[k].getIndice()-1);
+				}
+*/
+			}
+
 		}
 
+
+		lienSelect = -1;
+		noeudSelect = -1;
 		derniereSelection = 0;
+		//qDebug() << "fin des suppression";
+		vNoeud.clear();
+		vLien.clear();
 
 	}
 }
@@ -537,14 +803,23 @@ int ZoneDessin::getDernierNoeudSelect() const
 	return noeudSelect;
 }
 
-int* ZoneDessin::getDernierLienSelect() const
+int ZoneDessin::getDernierLienSelect() const
 {
-	return dernierLienSelect;
+	return lienSelect;
 }
 
 int ZoneDessin::getDerniereSelection() const
 {
 	return derniereSelection;
+}
+
+int ZoneDessin::getDernierEventUndo() const
+{
+	return dernierEventUndo;
+}
+int ZoneDessin::getDernierEventRedo() const
+{
+	return dernierEventRedo;
 }
 
 void ZoneDessin::setAjoutNoeud(bool b)
@@ -607,6 +882,29 @@ void ZoneDessin::setNbrClik(int n)
 	nbrClic = n;
 }
 
+void ZoneDessin::setDernierEventUndo(int i)
+{
+	dernierEventUndo = i;
+}
+void ZoneDessin::setDernierEventRedo(int i)
+{
+	dernierEventRedo = i;
+}
+
+void ZoneDessin::wheelAction(int hori, int verti)
+{/*
+	qDebug() << "Position du noeud 0 avant : " << tabRect[0]->pos();
+
+	int x = tabRect[0]->x() - hori + view->horizontalScrollBar()->sliderPosition();
+	int y = tabRect[0]->y() - verti + view->verticalScrollBar()->sliderPosition();
+
+	tabRect[0]->setX(x);
+	tabRect[0]->setY(y);
+
+	qDebug() << "Position du noeud 0 apres : " << tabRect[0]->pos();
+	*/
+}
+
 std::vector<Noeud> ZoneDessin::estDansLesNoeuds(int x, int y)
 {
 	std::vector<Noeud> listeNoeud;
@@ -614,19 +912,22 @@ std::vector<Noeud> ZoneDessin::estDansLesNoeuds(int x, int y)
 
 	for(unsigned int i = 0; i < g.m_tabNoeud.size(); i++)
 	{
-		QRect rect(g.m_tabNoeud[i].getPosition().getX() - g.m_tabNoeud[i].getWidth()/2, g.m_tabNoeud[i].getPosition().getY() - g.m_tabNoeud[i].getHeight()/2,
-					g.m_tabNoeud[i].getWidth()-3, g.m_tabNoeud[i].getHeight());
-
-		if(rect.contains(x,y))
+		if(g.m_tabNoeud[i].isVisible())
 		{
-			if(tabRect[i]->zValue() <= maxZ)
+			QRect rect(g.m_tabNoeud[i].getPosition().getX() - g.m_tabNoeud[i].getWidth()/2, g.m_tabNoeud[i].getPosition().getY() - g.m_tabNoeud[i].getHeight()/2,
+						g.m_tabNoeud[i].getWidth()-3, g.m_tabNoeud[i].getHeight());
+
+			if(rect.contains(x,y))
 			{
-				listeNoeud.insert(listeNoeud.begin(), g.m_tabNoeud[i]);
-			}
-			else
-			{
-				maxZ = tabRect[i]->zValue();
-				listeNoeud.push_back(g.m_tabNoeud[i]);
+				if(tabRect[i]->zValue() <= maxZ)
+				{
+					listeNoeud.insert(listeNoeud.begin(), g.m_tabNoeud[i]);
+				}
+				else
+				{
+					maxZ = tabRect[i]->zValue();
+					listeNoeud.push_back(g.m_tabNoeud[i]);
+				}
 			}
 		}
     }
@@ -644,28 +945,31 @@ std::vector<Lien> ZoneDessin::estDansLesLiens(int x, int y)
 
 	for(unsigned int i = 0; i < g.m_tabLien.size(); i++)
 	{
-		QLine lineEntiere(g.m_tabNoeud[g.m_tabLien[i].getNoeudSource()].getPosition().getX(),
-  					g.m_tabNoeud[g.m_tabLien[i].getNoeudSource()].getPosition().getY(),
-  					g.m_tabNoeud[g.m_tabLien[i].getNoeudCible()].getPosition().getX(),
-  					g.m_tabNoeud[g.m_tabLien[i].getNoeudCible()].getPosition().getY());
-  		QLineF lineReal(lineEntiere);
+		if(g.m_tabLien[i].isVisible())
+		{
+			QLine lineEntiere(g.m_tabNoeud[g.m_tabLien[i].getNoeudSource()].getPosition().getX(),
+	  					g.m_tabNoeud[g.m_tabLien[i].getNoeudSource()].getPosition().getY(),
+	  					g.m_tabNoeud[g.m_tabLien[i].getNoeudCible()].getPosition().getX(),
+	  					g.m_tabNoeud[g.m_tabLien[i].getNoeudCible()].getPosition().getY());
+	  		QLineF lineReal(lineEntiere);
 
-  		QPointF pointIntersection(0,0);
-  		QLineF::IntersectType intersection = lineReal.intersect(positionCurseurF, &pointIntersection);
-  		if(intersection == QLineF::BoundedIntersection)
-  		{
-  			listeLien.push_back(g.m_tabLien[i]);
-  		}
-  		else
-  		{
-  			QRect rect(g.m_tabLien[i].getPosition().getX() - g.m_tabLien[i].getWidth()/2, g.m_tabLien[i].getPosition().getY() - g.m_tabLien[i].getHeight(),
-					g.m_tabLien[i].getWidth(), g.m_tabLien[i].getHeight()+5);
-  			if(rect.contains(x,y))
-  			{
-  				listeLien.push_back(g.m_tabLien[i]);
-  			}
+	  		QPointF pointIntersection(0,0);
+	  		QLineF::IntersectType intersection = lineReal.intersect(positionCurseurF, &pointIntersection);
+	  		if(intersection == QLineF::BoundedIntersection)
+	  		{
+	  			listeLien.push_back(g.m_tabLien[i]);
+	  		}
+	  		else
+	  		{
+	  			QRect rect(g.m_tabLien[i].getPosition().getX() - g.m_tabLien[i].getWidth()/2, g.m_tabLien[i].getPosition().getY() - g.m_tabLien[i].getHeight(),
+						g.m_tabLien[i].getWidth(), g.m_tabLien[i].getHeight()+5);
+	  			if(rect.contains(x,y))
+	  			{
+	  				listeLien.push_back(g.m_tabLien[i]);
+	  			}
 
-  		}
+	  		}
+	  	}
 
 	}
 	return listeLien;

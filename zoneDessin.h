@@ -15,7 +15,6 @@
 #include "noeud.h"
 #include "lien.h"
 #include <QFontMetrics>
-#include "myQImage.h"
 #include <QVector>
 #include "graphe.h"
 #include <QGraphicsScene>
@@ -24,6 +23,14 @@
 #include <QGraphicsItem>
 #include <QMatrix>
 #include "myQView.h"
+#include <QUndoStack>
+#include <QUndoCommand>
+#include "UndoCommand/commandCreerNoeud.h"
+#include "UndoCommand/commandSupprimerNoeud.h"
+#include "UndoCommand/commandCreerLien.h"
+#include "UndoCommand/commandSupprimerLien.h"
+#include "UndoCommand/commandSupprimerSelection.h"
+#include "UndoCommand/commandChangerPositionNoeud.h"
 
 class ZoneDessin : public QWidget
 {
@@ -38,7 +45,7 @@ class ZoneDessin : public QWidget
 		bool	m_deplacer;
 		bool 	m_onPeutSeDeplacer;
 		bool	m_press;
-
+		bool	m_noeudBouge;
 
 
 /*
@@ -52,11 +59,15 @@ class ZoneDessin : public QWidget
 		int *dernierNoeudSelect;
 		int noeudSelect;
 		int *dernierLienSelect;
+		int lienSelect;
 		int derniereSelection;
+		int dernierEventUndo;
+		int dernierEventRedo;
 		Position positionInitiale;
 		Position positionFinale;
 		qreal plusHautTexte;
 		qreal plusHautRect;
+		QGraphicsRectItem* rectangleSelection;
 
 		
         std::string m_dernierNom;
@@ -64,6 +75,8 @@ class ZoneDessin : public QWidget
 	public:
 		std::vector<int> vNoeud;
 		std::vector<int> vLien;
+
+		QVector<int> lienDejaSuppr;
 
 		QVector<QGraphicsRectItem *> tabRect;
 		QVector<QGraphicsTextItem *> tabTxtRect;
@@ -75,6 +88,8 @@ class ZoneDessin : public QWidget
 		MyQView *view;
 		QGraphicsProxyWidget *proxy;
 		Graphe g;
+		QUndoStack* stack;
+
 
 		int maxX;
         int maxY;
@@ -94,8 +109,10 @@ class ZoneDessin : public QWidget
         bool getSelection() const;
         QGraphicsScene* getScene() const;
         int getDernierNoeudSelect() const;
-        int* getDernierLienSelect() const;
+        int getDernierLienSelect() const;
         int getDerniereSelection() const;
+        int getDernierEventUndo() const;
+        int getDernierEventRedo() const;
 
 
         void setAjoutNoeud(bool b);
@@ -104,11 +121,11 @@ class ZoneDessin : public QWidget
         void setSelection(bool b);
         void setDeplacer(bool b);
         void setNbrClik(int n);
+        void setDernierEventUndo(int i);
+        void setDernierEventRedo(int i);
 
         std::vector<Noeud> estDansLesNoeuds(int x, int y);
         std::vector<Lien> estDansLesLiens(int x, int y);
-
-        std::vector<int> triVectorInt(std::vector<int> v);
 
 
 	signals:
@@ -118,6 +135,9 @@ class ZoneDessin : public QWidget
 		void afficherMenuLien(int x, int y);
 		void changerNomNoeud(int x,int y);
 		void changerNomLien(int x,int y);
+
+		void deconnecter(int i, bool annuler); // undo = 0 redo = 1
+		void connecter(int i, bool annuler); // undo = 0 redo = 1
 
 	public slots:
 	void nouveauGraphe();
@@ -129,12 +149,7 @@ class ZoneDessin : public QWidget
 	void suppression(std::vector<int> tabNoeud, std::vector<int> tabLien);
 	void releaseSouris(int x, int y);
 
-    protected:
-	 	virtual void resizeEvent(QResizeEvent *e);
-	 	//virtual void mousePressEvent(QMouseEvent *e);
-	 	virtual void paintEvent(QPaintEvent *e);
-	 	//virtual void mouseReleaseEvent(QMouseEvent *e);
-
+	void wheelAction(int hori, int verti);
 };
 
 

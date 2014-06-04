@@ -21,6 +21,13 @@
 #include "noeud.h"
 #include "lien.h"
 #include <QtXml>
+#include "UndoCommand/commandCreerNoeud.h"
+#include "UndoCommand/commandChangerNomNoeud.h"
+#include "UndoCommand/commandChangerNomLien.h"
+#include "UndoCommand/commandChangerCouleurNoeud.h"
+#include "UndoCommand/commandChangerCouleurLien.h"
+
+
 #include <QKeySequence>
 
 
@@ -36,6 +43,7 @@ public :
         void sauvegardeImage(QString chemin);
         void chargement(QString chemin);
         QString couleurToNom(QColor c);
+        QAction* getAboutQt();
 
         
 
@@ -114,6 +122,7 @@ private:
         //Menus :
         QMenu 		*menuFichier;
         QMenu 		*menuEdition;
+        QMenu       *menuAPropos;
         QAction		*aNouveauGraphe;
         QAction		*aImporter;
         QAction		*aExporter;
@@ -121,12 +130,13 @@ private:
         QAction		*aAnnuler;
         QAction		*aRetablir;
         QAction     *aExporterImage;
+        QAction     *aAboutQt;
 
         QMenu       *menuClicDroit;
         QAction     *changerStyle;
         QMenu       *menuClicDroitLien;
         QAction     *aChangerStyleLien;
-        QAction     *aAjouterPointCassure;
+        //QAction     *aAjouterPointCassure;
 
 
         //boutons

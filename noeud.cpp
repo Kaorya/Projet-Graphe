@@ -11,12 +11,20 @@ Noeud::Noeud(std::string nom, int x, int y, int indice, int width, int heigth):m
 	m_couleurFond = Qt::white;
 	m_couleurPolice = Qt::black;
 	m_couleurBordure = Qt::black;
-	m_style = 0;
+	//m_style = 0;
+	m_visible = true;
 }
 Noeud::Noeud(std::string nom, Position const &p, int indice):m_nom(nom),m_position(p), m_indice(indice)
 {
 	//std::cout << "Noeud avec position cree" << std::endl;
+	m_visible = true;
 }
+Noeud::Noeud(const Noeud &n):m_nom(n.m_nom),m_position(n.m_position),m_widthRect(n.m_widthRect),m_heigth(n.m_heigth),m_couleurFond(n.m_couleurFond),m_couleurPolice(n.m_couleurPolice),m_couleurBordure(n.m_couleurBordure),m_indice(n.m_indice)
+{
+ //std::cout << "noeud par recopie cree";
+	m_visible = true;
+}
+
 std::string Noeud::getNom() const
 {
 	return m_nom;
@@ -49,10 +57,12 @@ int Noeud::getHeight() const
 {
 	return m_heigth;
 }
-int Noeud::getStyle() const
+
+bool Noeud::isVisible() const
 {
-	return m_style;
+	return m_visible;
 }
+
 void Noeud::setNom(std::string nom)
 {
 	m_nom = nom;
@@ -87,7 +97,8 @@ void Noeud::setHeigth(int h)
 {
 	m_heigth = h;
 }
-void Noeud::setStyle(int s)
+
+void Noeud::setVisible(bool b)
 {
-	m_style = s;
+	m_visible = b;
 }

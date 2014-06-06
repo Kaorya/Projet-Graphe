@@ -83,6 +83,7 @@ MyMainWindows::MyMainWindows(QWidget * parent) : QWidget(parent)
       dExporter->setWindowTitle("Sauvegarde");
       dCreerNoeud->setWindowTitle("Nouveau noeud");
       dCreerLien->setWindowTitle("Nouveau lien");
+      this->setWindowTitle("Visualisation de Graphe");
   
       //******************************************************//
       //                SLOTS ET SIGNAUX

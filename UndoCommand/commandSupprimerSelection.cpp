@@ -13,19 +13,24 @@ void CommandSupprimerSelection::undo()
 	{
 		for(unsigned int j = 0; j < m_zone->g.m_tabLien.size(); j++)
 		{
-			if(m_zone->g.m_tabLien[j].getNoeudSource() == tabIndiceNoeud[i]-i || m_zone->g.m_tabLien[j].getNoeudCible() == tabIndiceNoeud[i]-i)
+			if(!m_zone->lienDejaSuppr.contains(m_zone->g.m_tabLien[j].getIndice()))
 			{
-				if(!m_zone->g.m_tabLien[j].isVisible())
+				if(m_zone->g.m_tabLien[j].getNoeudSource() == tabIndiceNoeud[i]-i || m_zone->g.m_tabLien[j].getNoeudCible() == tabIndiceNoeud[i]-i)
 				{
-					m_zone->g.m_tabLien[j].setVisible(true);
+					if(!m_zone->g.m_tabLien[j].isVisible())
+					{
 
-					m_zone->tabLine[j]->setActive(true);
-					m_zone->tabRectLine[j]->setActive(true);
-					m_zone->tabTxtLine[j]->setActive(true);
-				
-					m_zone->tabLine[j]->show();
-					m_zone->tabRectLine[j]->show();
-					m_zone->tabTxtLine[j]->show();
+						m_zone->g.m_tabLien[j].setVisible(true);
+
+						m_zone->tabLine[j]->setActive(true);
+						m_zone->tabRectLine[j]->setActive(true);
+						m_zone->tabTxtLine[j]->setActive(true);
+					
+						m_zone->tabLine[j]->show();
+						m_zone->tabRectLine[j]->show();
+						m_zone->tabTxtLine[j]->show();
+						
+					}
 				}
 			}
 		}
@@ -39,17 +44,17 @@ void CommandSupprimerSelection::undo()
 
 	for(unsigned int i = 0; i < tabIndiceLien.size(); i++)
 	{
-		//qDebug() << "for des liens a delete";
+		if(!m_zone->lienDejaSuppr.contains(m_zone->g.m_tabLien[i].getIndice()))
+		{
+			m_zone->g.m_tabLien[tabIndiceLien[i]].setVisible(true);
+			m_zone->tabRectLine[tabIndiceLien[i]]->setActive(true);
+			m_zone->tabLine[tabIndiceLien[i]]->setActive(true);
+			m_zone->tabTxtLine[tabIndiceLien[i]]->setActive(true);
 
-		m_zone->g.m_tabLien[tabIndiceLien[i]].setVisible(true);
-		m_zone->tabRectLine[tabIndiceLien[i]]->setActive(true);
-		m_zone->tabLine[tabIndiceLien[i]]->setActive(true);
-		m_zone->tabTxtLine[tabIndiceLien[i]]->setActive(true);
-
-		m_zone->tabRectLine[tabIndiceLien[i]]->show();
-		m_zone->tabLine[tabIndiceLien[i]]->show();
-		m_zone->tabTxtLine[tabIndiceLien[i]]->show();
-
+			m_zone->tabRectLine[tabIndiceLien[i]]->show();
+			m_zone->tabLine[tabIndiceLien[i]]->show();
+			m_zone->tabTxtLine[tabIndiceLien[i]]->show();
+		}
 	}
 
 }

@@ -64,6 +64,7 @@ bool MyQView::eventFilter(QObject * obj, QEvent * event)
 }
 void MyQView::wheelEvent(QWheelEvent* event)
 {
+  /*
     //setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     int horizontalPosition = horizontalScrollBar()->sliderPosition();
     int verticalPosition = verticalScrollBar()->sliderPosition();

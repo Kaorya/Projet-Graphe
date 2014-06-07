@@ -518,6 +518,15 @@ void MyMainWindows::annulation()
     zone->setAjoutLien(false);
     bAjoutLien->setDown(false);
     this->setCursor(Qt::ArrowCursor);
+    for(int i = 0; i < zone->tabRect.size(); i++)
+    {
+      if( zone->tabRect[i]->pen().style() == Qt::DotLine)
+      {
+        QPen pen(Qt::SolidLine);
+        pen.setColor( zone->g.m_tabNoeud[i].getCouleurBordure());
+         zone->tabRect[i]->setPen(pen);
+      }
+    }
   }
 }
 

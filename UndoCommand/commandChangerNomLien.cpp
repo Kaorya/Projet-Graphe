@@ -26,6 +26,15 @@ void CommandChangerNomLien::undo()
     m_zone->g.m_tabLien[indice].getPosition().getY() 
      - m_zone->tabRectLine[indice]->rect().height());
 
+    if(nouveauNom.isEmpty())
+    {
+        m_zone->tabRectLine[indice]->show();
+    }
+    if(ancienNom.isEmpty())
+    {
+        m_zone->tabRectLine[indice]->hide();
+    }
+
 }
 void CommandChangerNomLien::redo()
 {
@@ -47,5 +56,14 @@ void CommandChangerNomLien::redo()
      - m_zone->tabRectLine[indice]->rect().width()/2,
     m_zone->g.m_tabLien[indice].getPosition().getY() 
      - m_zone->tabRectLine[indice]->rect().height());
+
+    if(ancienNom.isEmpty())
+    {
+        m_zone->tabRectLine[indice]->show();
+    }
+    if(nouveauNom.isEmpty())
+    {
+        m_zone->tabRectLine[indice]->hide();
+    }
 
 }

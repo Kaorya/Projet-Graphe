@@ -10,7 +10,8 @@ void CommandSupprimerLien::undo()
 	m_zone->tabRectLine[indice]->setActive(true);
 	m_zone->tabTxtLine[indice]->setActive(true);
 	m_zone->tabLine[indice]->setActive(true);
-	m_zone->tabRectLine[indice]->show();
+	if(!QString::fromStdString(m_zone->g.m_tabLien[indice].getNom()).isEmpty())
+		m_zone->tabRectLine[indice]->show();
 	m_zone->tabTxtLine[indice]->show();
 	m_zone->tabLine[indice]->show();
 	m_zone->g.m_tabLien[indice].setVisible(true);

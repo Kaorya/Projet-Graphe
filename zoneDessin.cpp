@@ -218,7 +218,6 @@ void ZoneDessin::recuperationCoord(int x , int y)
 
 				tabRectLine[l.getIndice()]->setPos(p);
 
-
 			  	tabTxtLine.push_back(scene->addText(s,scene->font()));
 				tabTxtLine[l.getIndice()]->setDefaultTextColor(l.getCouleurPoliceLien());
 				tabTxtLine[l.getIndice()]->setPos(p);
@@ -228,6 +227,11 @@ void ZoneDessin::recuperationCoord(int x , int y)
 				CommandCreerLien* commande = new CommandCreerLien(this, l.getIndice());
 				stack->push(commande);
 
+				if(QString::fromStdString(l.getNom()).isEmpty())
+				{
+					//qDebug() << "indice :" << l.getIndice() << "pouet";
+				    tabRectLine[l.getIndice()]->hide();
+				}
 
 				
 			}
@@ -294,6 +298,7 @@ void ZoneDessin::recuperationCoord(int x , int y)
 		}
 		else if(!listeLien.empty())
 		{
+			//qDebug() << "On se situe sur un lien";
 
 		if(lienSelect > -1)
 		{
@@ -1046,5 +1051,10 @@ void ZoneDessin::dessinerGraphe(Graphe g)
 		tabTxtLine[g.m_tabLien[i].getIndice()]->setPos(p);
 		
 		tabTxtLine[g.m_tabLien[i].getIndice()]->setZValue(2);
+
+		if(QString::fromStdString(g.m_tabLien[i].getNom()).isEmpty())
+		{
+			tabRectLine[g.m_tabLien[i].getIndice()]->hide();
+		}
 	}
 }

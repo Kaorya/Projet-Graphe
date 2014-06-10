@@ -671,6 +671,7 @@ void MyMainWindows::changerNomLien(int x, int y)
   QString s = QString::fromStdString(zone->g.m_tabLien[dernierLienSelect].getNom());
   editNom->setText(s);
   editNom->show();
+
   m_changeLien = true;
 }
 
@@ -691,6 +692,14 @@ void MyMainWindows::changerNom()
 
     CommandChangerNomLien * commande = new CommandChangerNomLien(zone, dernierLienSelect, QString::fromStdString(zone->g.m_tabLien[dernierLienSelect].getNom()), editNom->text());
     zone->stack->push(commande);
+
+  if(editNom->text().isEmpty())
+  {
+    zone->tabRectLine[dernierLienSelect]->hide();
+  }
+  else
+    zone->tabRectLine[dernierLienSelect]->show();
+    
  
 
     m_changeLien = false;

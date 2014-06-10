@@ -541,20 +541,26 @@ void MyMainWindows::suppression()
       if(zone->getDerniereSelection() == 1)
       { //qDebug() << "derniereSelection : noeud";
          // qDebug() << "dernierNoeudSelect : " << (zone->getDernierNoeudSelect());
+        if(zone->getDernierNoeudSelect() > -1)
+        {
           v.push_back((zone->getDernierNoeudSelect()));
 
           CommandSupprimerNoeud* commande = new CommandSupprimerNoeud(zone, zone->getDernierNoeudSelect());
           zone->stack->push(commande);
+        }
 
       }
       else if(zone->getDerniereSelection() == 2)
       { //qDebug() << "derniereSelection : lien";
+        if(zone->getDernierLienSelect() > -1)
+        {
           v2.push_back((zone->getDernierLienSelect()));
 
           CommandSupprimerLien* commande = new CommandSupprimerLien(zone, zone->getDernierLienSelect());
           zone->stack->push(commande);
 
           zone->lienDejaSuppr.push_back((zone->getDernierLienSelect()));
+        }
 /*
           qDebug() << "dernierEvent undo:" << zone->getDernierEventUndo();
           if(zone->getDernierEventUndo() >= 0)
@@ -1012,6 +1018,32 @@ void MyMainWindows::sauvegarde(QString chemin)
 
 void MyMainWindows::sauvegardeImage(QString chemin)
 {
+
+  for(int i = 0; i < zone->tabRect.size(); i++)
+    {
+      if(zone->tabRect[i]->pen().style() == Qt::DotLine)
+      {
+        QPen pen(Qt::SolidLine);
+        pen.setColor(zone->g.m_tabNoeud[i].getCouleurBordure());
+        zone->tabRect[i]->setPen(pen);
+      }
+    }
+
+    for(int i = 0; i < zone->tabLine.size(); i++)
+    {
+      if(zone->tabLine[i]->pen().style() == Qt::DotLine)
+      {
+        QPen pen(Qt::SolidLine);
+        pen.setColor(zone->g.m_tabLien[i].getCouleurLien());
+        zone->tabLine[i]->setPen(pen);
+      }
+    }
+    zone->setDernierNoeudSelect(-1);
+    zone->setDernierLienSelect(-1);
+
+    zone->vNoeud.clear();
+    zone->vLien.clear();
+
   QImage image(4000,4000,QImage::Format_RGB32);
   image.fill(Qt::white);
 

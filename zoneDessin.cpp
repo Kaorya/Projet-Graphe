@@ -92,7 +92,6 @@ void ZoneDessin::recuperationCoord(int x , int y)
 	{
 
 		bool estPositionable = true;
-		
 
 		if(!listeNoeuds.empty())
 		{
@@ -886,6 +885,17 @@ void ZoneDessin::setNbrClik(int n)
 {
 	nbrClic = n;
 }
+
+void ZoneDessin::setDernierNoeudSelect(int i)
+{
+	noeudSelect = i;
+}
+
+void ZoneDessin::setDernierLienSelect(int i)
+{
+	lienSelect = i;
+}
+
 
 void ZoneDessin::setDernierEventUndo(int i)
 {

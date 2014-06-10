@@ -29,7 +29,8 @@ void CommandSupprimerNoeud::undo()
 					m_zone->tabTxtLine[j]->setActive(true);
 				
 					m_zone->tabLine[j]->show();
-					m_zone->tabRectLine[j]->show();
+					if(!QString::fromStdString(m_zone->g.m_tabLien[j].getNom()).isEmpty())
+						m_zone->tabRectLine[j]->show();
 					m_zone->tabTxtLine[j]->show();
 				}
 			}
@@ -45,7 +46,8 @@ void CommandSupprimerNoeud::undo()
 						m_zone->tabTxtLine[j]->setActive(true);
 					
 						m_zone->tabLine[j]->show();
-						m_zone->tabRectLine[j]->show();
+						if(!QString::fromStdString(m_zone->g.m_tabLien[j].getNom()).isEmpty())
+							m_zone->tabRectLine[j]->show();
 						m_zone->tabTxtLine[j]->show();
 					}
 				}
